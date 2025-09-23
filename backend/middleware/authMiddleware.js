@@ -1,55 +1,55 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const Blacklist = require("../models/blacklist");
 
-const protect = async (req, res, next) => {
-    try {
-        // 1. Get token from header and check if it exists
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer')) {
-            return res.status(401).json({ 
-                status: 'error',
-                message: 'Authentication required. Please provide a valid token.' 
-            });
-        }
+exports.protect = async (req, res, next) => {
+  try {
+    let token;
 
-        const token = authHeader.split(' ')[1];
-
-        // 2. Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-            algorithms: ['HS256'] // Only allow HS256 algorithm
-        });
-
-        // 3. Check if user still exists
-        const user = await User.findById(decoded.id).select('-password');
-        if (!user) {
-            return res.status(401).json({ 
-                status: 'error',
-                message: 'The user belonging to this token no longer exists.' 
-            });
-        }
-
-        // 4. Grant access to protected route
-        req.user = user;
-        next();
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ 
-                status: 'error',
-                message: 'Invalid token. Please log in again.' 
-            });
-        }
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ 
-                status: 'error',
-                message: 'Your token has expired. Please log in again.' 
-            });
-        }
-        console.error('Auth Error:', error);
-        res.status(401).json({ 
-            status: 'error',
-            message: 'Not authorized to access this route' 
-        });
+    // Extract token from Authorization header
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+      console.log("Extracted Token:", token); // Debugging token extraction
     }
-};
 
-module.exports = { protect };
+    if (!token) {
+      console.log("No token found in Authorization header"); // Debugging
+      return res.status(401).json({ message: "Not authorized, no token provided" });
+    }
+
+    // Check if token is blacklisted
+    const isBlacklisted = await Blacklist.findOne({ token });
+    if (isBlacklisted) {
+      console.log("Token is blacklisted:", token); // Debugging
+      return res.status(401).json({ message: "Token has been revoked. Please log in again." });
+    }
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded Token:", decoded); // Debugging decoded token
+    } catch (jwtError) {
+      if (jwtError.name === "TokenExpiredError") {
+        console.log("Token expired:", token); // Debugging token expiry
+        return res.status(401).json({ message: "Session expired, please log in again." });
+      }
+      console.error("Invalid token:", jwtError.message); // Debugging invalid token
+      return res.status(401).json({ message: "Invalid token, please log in again." });
+    }
+
+    // Fetch user data from database
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      console.log("User not found with ID:", decoded.id); // Debugging user not found
+      return res.status(404).json({ message: "User not found, please log in again." });
+    }
+
+    // Attach user to request object
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Auth Middleware Error:", error.message); // Log unexpected errors
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
