@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
-import { 
-  FaUser, FaEnvelope, FaLock, FaArrowRight, FaPhone, FaMapMarkerAlt, 
+import {
+  FaUser, FaEnvelope, FaLock, FaArrowRight, FaPhone, FaMapMarkerAlt,
   FaBriefcase, FaGraduationCap, FaHeart, FaCalendarAlt, FaUpload,
-  FaBuilding, FaIdCard, FaFlag
+  FaBuilding, FaIdCard, FaFlag, FaTrash
 } from "react-icons/fa";
 import { RiEyeLine, RiEyeOffLine } from "react-icons/ri";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
@@ -17,7 +17,7 @@ const Register = () => {
     // Basic Info
     name: "", email: "", password: "", phone: "", gender: "", dateOfBirth: "",
     streetAddress: "", city: "", state: "", pincode: "", country: "",
-    chapter: "", joinDate: "", expectations: "",
+    chapter: "", joinDate: "", expectations: "", profilePhoto: null,
     
     // Business
     businessName: "", sponsorName: "", contactRole: "", gstNumber: "",
@@ -34,9 +34,9 @@ const Register = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
-  const [isLogin, setIsLogin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const steps = [
@@ -46,7 +46,116 @@ const Register = () => {
     { id: 'social', title: 'Social & Hobbies', icon: <FaHeart className="w-5 h-5" /> }
   ];
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Business categories with subcategories
+  const businessCategories = {
+    "": [],
+    "technology": ["Software Development", "Hardware", "AI/ML", "Cybersecurity", "Cloud Services"],
+    "finance": ["Banking", "Investment", "Insurance", "Fintech", "Accounting"],
+    "healthcare": ["Hospitals", "Pharmaceuticals", "Medical Devices", "Telemedicine", "Healthcare IT"],
+    "education": ["K-12 Education", "Higher Education", "Online Learning", "Training", "EdTech"],
+    "retail": ["E-commerce", "Fashion", "Electronics", "Home & Garden", "Automotive"],
+    "manufacturing": ["Automotive", "Textiles", "Food Processing", "Chemicals", "Electronics"],
+    "services": ["Consulting", "Legal", "Marketing", "HR Services", "Logistics"]
+  };
+
+  const professionalCategories = {
+    "": [],
+    "engineering": ["Software Engineering", "Mechanical", "Electrical", "Civil", "Chemical"],
+    "marketing": ["Digital Marketing", "Content Marketing", "Brand Management", "SEO/SEM", "Social Media"],
+    "sales": ["B2B Sales", "Retail Sales", "Account Management", "Business Development", "Sales Operations"],
+    "finance": ["Financial Analysis", "Accounting", "Investment Banking", "Risk Management", "Audit"],
+    "design": ["UI/UX Design", "Graphic Design", "Product Design", "Interior Design", "Industrial Design"],
+    "management": ["Project Management", "Operations", "Strategy", "HR Management", "General Management"]
+  };
+
+  const skillsOptions = [
+    "JavaScript", "Python", "React", "Node.js", "Angular", "Vue.js", "Java", "C++",
+    "SQL", "MongoDB", "AWS", "Azure", "Docker", "Kubernetes", "Git", "Agile",
+    "Project Management", "Leadership", "Communication", "Problem Solving"
+  ];
+
+  // Load saved data from memory storage on component mount
+  useEffect(() => {
+    // Note: Using memory storage instead of localStorage for Claude.ai compatibility
+    const savedData = window.registrationData;
+    if (savedData) {
+      setFormData(savedData.formData || formData);
+      setCurrentStep(savedData.currentStep || 0);
+      setCompletedSteps(savedData.completedSteps || []);
+    }
+  }, []);
+
+  const saveToStorage = (data) => {
+    // Using window object for memory storage
+    window.registrationData = data;
+  };
+
+  const handleChange = (e) => {
+    const newFormData = { ...formData, [e.target.name]: e.target.value };
+    setFormData(newFormData);
+    saveToStorage({
+      formData: newFormData,
+      currentStep,
+      completedSteps
+    });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Please select a valid image file (JPEG, PNG, GIF)");
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error("File size should be less than 5MB");
+        return;
+      }
+
+      const newFormData = { ...formData, profilePhoto: file };
+      setFormData(newFormData);
+      saveToStorage({
+        formData: newFormData,
+        currentStep,
+        completedSteps
+      });
+      toast.success("Profile photo uploaded successfully!");
+    }
+  };
+
+  const removeFile = () => {
+    const newFormData = { ...formData, profilePhoto: null };
+    setFormData(newFormData);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    saveToStorage({
+      formData: newFormData,
+      currentStep,
+      completedSteps
+    });
+    toast.info("Profile photo removed");
+  };
+
+  const handleBusinessCategoryChange = (e) => {
+    const category = e.target.value;
+    const newFormData = { 
+      ...formData, 
+      businessCategory: category,
+      subCategory: "" // Reset subcategory when main category changes
+    };
+    setFormData(newFormData);
+    saveToStorage({
+      formData: newFormData,
+      currentStep,
+      completedSteps
+    });
+  };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -55,13 +164,55 @@ const Register = () => {
         newCompleted.push(currentStep);
         setCompletedSteps(newCompleted);
       }
-      setCurrentStep(currentStep + 1);
+      const newStep = currentStep + 1;
+      setCurrentStep(newStep);
+      saveToStorage({
+        formData,
+        currentStep: newStep,
+        completedSteps: newCompleted
+      });
     }
   };
 
   const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep);
+      saveToStorage({
+        formData,
+        currentStep: newStep,
+        completedSteps
+      });
+    }
+  };
+
+  const handleReset = () => {
+    const confirmReset = window.confirm(
+      "Are you sure you want to reset the entire form? All your progress will be lost."
+    );
+    
+    if (confirmReset) {
+      const initialFormData = {
+        name: "", email: "", password: "", phone: "", gender: "", dateOfBirth: "",
+        streetAddress: "", city: "", state: "", pincode: "", country: "",
+        chapter: "", joinDate: "", expectations: "", profilePhoto: null,
+        businessName: "", sponsorName: "", contactRole: "", gstNumber: "",
+        businessCategory: "", establishedYear: "", companySize: "", businessRegNumber: "",
+        subCategory: "", headquarters: "", workPreference: "", panNumber: "", shortDescription: "",
+        profName: "", role: "", profCategory: "", profWorkPreference: "", yearsExperience: "", skillsTech: "",
+        socialName: "", socialCategory: "", hobbies: "", motivation: "", travelAvailable: ""
+      };
+
+      setFormData(initialFormData);
+      setCurrentStep(0);
+      setCompletedSteps([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Clear storage
+      delete window.registrationData;
+      toast.success("Form has been reset successfully!");
     }
   };
 
@@ -69,94 +220,172 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (isLogin) {
-      if (!formData.email || !formData.password) {
-        toast.error("Please fill in all required fields");
-        setLoading(false);
-        return;
-      }
-    } else {
-      if (!formData.name || !formData.email || !formData.password) {
-        toast.error("Please fill in all required fields");
-        setLoading(false);
-        return;
-      }
+    // Define all required fields with clear validation
+    const requiredFields = {
+      // Basic Info - Required fields
+      name: { value: formData.name, label: "Full Name" },
+      email: { value: formData.email, label: "Email Address" },
+      password: { value: formData.password, label: "Password" },
+      phone: { value: formData.phone, label: "Phone Number" },
+      gender: { value: formData.gender, label: "Gender" },
+      country: { value: formData.country, label: "Country" },
+      chapter: { value: formData.chapter, label: "Chapter" },
+      joinDate: { value: formData.joinDate, label: "Join Date" },
+      // Professional - Required fields
+      profName: { value: formData.profName, label: "Professional Name" },
+      // Social - Required fields
+      hobbies: { value: formData.hobbies, label: "Hobbies" }
+    };
+
+    // Check for missing required fields
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, field]) => !field.value || field.value.toString().trim() === '')
+      .map(([key, field]) => field.label);
+
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      setLoading(false);
+      return;
+    }
+
+    // Additional validation for specific fields
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(formData.phone.replace(/\s+/g, ''))) {
+      toast.error("Please enter a valid phone number");
+      setLoading(false);
+      return;
     }
 
     try {
-      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-      const payload = isLogin
-        ? { email: formData.email, password: formData.password }
-        : formData;
+      // Prepare comprehensive payload with ALL form data
+      const registrationPayload = {
+        // Basic Information
+        name: formData.name || "",
+        email: formData.email || "",
+        password: formData.password || "",
+        phone: formData.phone || "",
+        gender: formData.gender || "",
+        dateOfBirth: formData.dateOfBirth || "",
+        streetAddress: formData.streetAddress || "",
+        city: formData.city || "",
+        state: formData.state || "",
+        pincode: formData.pincode || "",
+        country: formData.country || "",
+        chapter: formData.chapter || "",
+        joinDate: formData.joinDate || "",
+        expectations: formData.expectations || "",
+        profilePhoto: formData.profilePhoto ? {
+          name: formData.profilePhoto.name,
+          size: formData.profilePhoto.size,
+          type: formData.profilePhoto.type
+        } : null,
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}${endpoint}`, payload);
+        // Business Information
+        businessName: formData.businessName || "",
+        sponsorName: formData.sponsorName || "",
+        contactRole: formData.contactRole || "",
+        gstNumber: formData.gstNumber || "",
+        businessCategory: formData.businessCategory || "",
+        establishedYear: formData.establishedYear || "",
+        companySize: formData.companySize || "",
+        businessRegNumber: formData.businessRegNumber || "",
+        subCategory: formData.subCategory || "",
+        headquarters: formData.headquarters || "",
+        workPreference: formData.workPreference || "",
+        panNumber: formData.panNumber || "",
+        shortDescription: formData.shortDescription || "",
+
+        // Professional Information
+        professionalName: formData.profName || "",
+        role: formData.role || "",
+        professionalCategory: formData.profCategory || "",
+        professionalWorkPreference: formData.profWorkPreference || "",
+        yearsExperience: formData.yearsExperience || "",
+        skillsTechnologies: formData.skillsTech || "",
+
+        // Social & Hobbies Information
+        socialName: formData.socialName || "",
+        socialCategory: formData.socialCategory || "",
+        hobbies: formData.hobbies || "",
+        motivation: formData.motivation || "",
+        travelAvailable: formData.travelAvailable || "",
+
+        // Form metadata
+        registrationStep: 'complete',
+        completedSteps: completedSteps,
+        submittedAt: new Date().toISOString(),
+        formVersion: "2.0"
+      };
+
+      console.log('Sending complete registration payload:', registrationPayload);
+      console.log('Total fields being sent:', Object.keys(registrationPayload).length);
+
+      // Real API call - replace with your actual endpoint
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/auth/register`,
+        registrationPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
       const { token, user } = response.data;
 
+      // Store authentication data
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      
       setSuccess(true);
-      toast.success(isLogin ? "Login successful!" : "Registration successful!");
+      toast.success("Registration successful! Welcome to Ekam Global Network!");
+      
+      // Clear form data on successful submission
+      delete window.registrationData;
       setTimeout(() => navigate("/Home"), 2000);
+
     } catch (err) {
-      toast.error(err.response?.data?.message || "An unexpected error occurred");
+      console.error('Registration error:', err);
+      
+      // Handle different types of errors
+      if (err.response) {
+        // Server responded with error status
+        const errorMessage = err.response.data?.message || 
+                           err.response.data?.error || 
+                           `Registration failed (${err.response.status})`;
+        toast.error(errorMessage);
+        console.error('Server Error:', err.response.data);
+      } else if (err.request) {
+        // Request made but no response received
+        toast.error("Network error. Please check your connection and try again.");
+        console.error('Network Error:', err.request);
+      } else {
+        // Something else happened
+        toast.error("An unexpected error occurred during registration.");
+        console.error('Error:', err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
-    setCurrentStep(0);
-    setCompletedSteps([]);
-    navigate("/login");
-  };
-
-  const renderLoginForm = () => (
-    <div className="space-y-6 max-w-md mx-auto">
-      <div>
-        <label className="block text-gray-300 text-sm mb-2">Email address <span className="text-red-500">*</span></label>
-        <div className="relative">
-          <FaEnvelope className="absolute left-4 top-4 text-orange-400 text-lg" />
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email address"
-            className="w-full pl-12 pr-4 py-4 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-            required
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-gray-300 text-sm mb-2">Password <span className="text-red-500">*</span></label>
-        <div className="relative">
-          <FaLock className="absolute left-4 top-4 text-orange-400 text-lg" />
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full pl-12 pr-12 py-4 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-            required
-          />
-          <button
-            type="button"
-            className="absolute right-4 top-4 text-gray-400 hover:text-orange-400 text-lg transition-colors"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <RiEyeOffLine /> : <RiEyeLine />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderBasicInfo = () => (
     <div className="space-y-6">
       {/* Row 1 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Your full name <span className="text-red-500">*</span></label>
           <input
@@ -195,8 +424,33 @@ const Register = () => {
         </div>
       </div>
 
+      {/* Row 1.5 - Password */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="relative">
+          <label className="block text-gray-300 text-sm mb-2">Password <span className="text-red-500">*</span></label>
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            className="w-full px-4 py-3 pr-12 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
+            required
+          />
+          <button
+            type="button"
+            className="absolute right-4 top-10 text-gray-400 hover:text-orange-400 text-lg transition-colors"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <RiEyeOffLine /> : <RiEyeLine />}
+          </button>
+        </div>
+        <div></div>
+        <div></div>
+      </div>
+
       {/* Row 2 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Gender <span className="text-red-500">*</span></label>
           <select
@@ -210,32 +464,63 @@ const Register = () => {
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
+            <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Date of birth <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Date of birth</label>
           <input
             type="date"
             name="dateOfBirth"
             value={formData.dateOfBirth}
             onChange={handleChange}
-            placeholder="Select date of birth (mm/dd/yyyy)"
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           />
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Upload profile Photo</label>
-          <div className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-gray-400 flex items-center justify-between">
-            <span>Choose File</span>
-            <span className="text-sm">No file chosen</span>
+          <div className="relative">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+            <div 
+              className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-gray-400 flex items-center justify-between cursor-pointer hover:border-orange-500 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="flex items-center space-x-2">
+                <FaUpload className="text-orange-400" />
+                <span>{formData.profilePhoto ? formData.profilePhoto.name : "Choose File"}</span>
+              </div>
+              {formData.profilePhoto && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                  className="text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <FaTrash />
+                </button>
+              )}
+            </div>
+            {formData.profilePhoto && (
+              <div className="mt-2 text-sm text-green-400">
+                File size: {(formData.profilePhoto.size / 1024).toFixed(1)} KB
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Row 3 */}
-      <div className="grid grid-cols-3 gap-6">
+      {/* Address Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Street Address <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Street Address</label>
           <input
             type="text"
             name="streetAddress"
@@ -246,7 +531,7 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">City <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">City</label>
           <input
             type="text"
             name="city"
@@ -257,7 +542,7 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">State <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">State</label>
           <input
             type="text"
             name="state"
@@ -269,10 +554,9 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Row 4 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Pincode <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Pincode</label>
           <input
             type="text"
             name="pincode"
@@ -284,15 +568,23 @@ const Register = () => {
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Country <span className="text-red-500">*</span></label>
-          <input
-            type="text"
+          <select
             name="country"
             value={formData.country}
             onChange={handleChange}
-            placeholder="Enter Country"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
             required
-          />
+          >
+            <option value="">Select Country</option>
+            <option value="india">India</option>
+            <option value="usa">United States</option>
+            <option value="uk">United Kingdom</option>
+            <option value="canada">Canada</option>
+            <option value="australia">Australia</option>
+            <option value="germany">Germany</option>
+            <option value="france">France</option>
+            <option value="other">Other</option>
+          </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">When do you plan to join? <span className="text-red-500">*</span></label>
@@ -307,8 +599,7 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Row 5 */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Which chapter are you registering for? <span className="text-red-500">*</span></label>
           <select
@@ -318,21 +609,25 @@ const Register = () => {
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
             required
           >
-            <option value="">Select your answer</option>
+            <option value="">Select your chapter</option>
             <option value="mumbai">Mumbai Chapter</option>
             <option value="delhi">Delhi Chapter</option>
             <option value="bangalore">Bangalore Chapter</option>
+            <option value="pune">Pune Chapter</option>
+            <option value="hyderabad">Hyderabad Chapter</option>
+            <option value="chennai">Chennai Chapter</option>
+            <option value="kolkata">Kolkata Chapter</option>
           </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Please let us know what you expect from Ekam</label>
-          <input
-            type="text"
+          <textarea
             name="expectations"
             value={formData.expectations}
             onChange={handleChange}
-            placeholder="Enter your answer"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
+            placeholder="Enter your expectations"
+            rows="3"
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors resize-none"
           />
         </div>
       </div>
@@ -341,10 +636,9 @@ const Register = () => {
 
   const renderBusinessInfo = () => (
     <div className="space-y-6">
-      {/* Row 1 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Business Name <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Business Name</label>
           <input
             type="text"
             name="businessName"
@@ -355,34 +649,39 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Business Category <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Business Category</label>
           <select
             name="businessCategory"
             value={formData.businessCategory}
-            onChange={handleChange}
+            onChange={handleBusinessCategoryChange}
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           >
             <option value="">Select Category</option>
-            <option value="tech">Technology</option>
-            <option value="finance">Finance</option>
-            <option value="healthcare">Healthcare</option>
+            {Object.keys(businessCategories).filter(key => key !== "").map(category => (
+              <option key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </option>
+            ))}
           </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Sub-category</label>
-          <input
-            type="text"
+          <select
             name="subCategory"
             value={formData.subCategory}
             onChange={handleChange}
-            placeholder="Enter Sub-category"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-          />
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
+            disabled={!formData.businessCategory}
+          >
+            <option value="">Select Sub-category</option>
+            {formData.businessCategory && businessCategories[formData.businessCategory]?.map(sub => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Row 2 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Sponsor Name | Write Self if referred by none</label>
           <input
@@ -402,6 +701,8 @@ const Register = () => {
             value={formData.establishedYear}
             onChange={handleChange}
             placeholder="Enter Established Year"
+            min="1800"
+            max={new Date().getFullYear()}
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
           />
         </div>
@@ -418,18 +719,24 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Row 3 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Contact Role </label>
-          <input
-            type="text"
+          <label className="block text-gray-300 text-sm mb-2">Contact Role</label>
+          <select
             name="contactRole"
             value={formData.contactRole}
             onChange={handleChange}
-            placeholder="Enter Contact Role"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-          />
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
+          >
+            <option value="">Select Role</option>
+            <option value="ceo">CEO</option>
+            <option value="founder">Founder</option>
+            <option value="cto">CTO</option>
+            <option value="manager">Manager</option>
+            <option value="director">Director</option>
+            <option value="owner">Owner</option>
+            <option value="other">Other</option>
+          </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Company Size</label>
@@ -443,6 +750,8 @@ const Register = () => {
             <option value="1-10">1-10 employees</option>
             <option value="11-50">11-50 employees</option>
             <option value="51-200">51-200 employees</option>
+            <option value="201-1000">201-1000 employees</option>
+            <option value="1000+">1000+ employees</option>
           </select>
         </div>
         <div>
@@ -457,12 +766,12 @@ const Register = () => {
             <option value="remote">Remote</option>
             <option value="onsite">On-site</option>
             <option value="hybrid">Hybrid</option>
+            <option value="flexible">Flexible</option>
           </select>
         </div>
       </div>
 
-      {/* Row 4 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">GST Number</label>
           <input
@@ -498,7 +807,6 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Row 5 */}
       <div>
         <label className="block text-gray-300 text-sm mb-2">Short Description</label>
         <textarea
@@ -515,8 +823,7 @@ const Register = () => {
 
   const renderProfessionalInfo = () => (
     <div className="space-y-6">
-      {/* Row 1 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Name <span className="text-red-500">*</span></label>
           <input
@@ -530,7 +837,7 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Role <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Role</label>
           <input
             type="text"
             name="role"
@@ -541,7 +848,7 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Professional Category <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Professional Category</label>
           <select
             name="profCategory"
             value={formData.profCategory}
@@ -549,36 +856,49 @@ const Register = () => {
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           >
             <option value="">Select Category</option>
-            <option value="engineering">Engineering</option>
-            <option value="marketing">Marketing</option>
-            <option value="sales">Sales</option>
+            {Object.keys(professionalCategories).filter(key => key !== "").map(category => (
+              <option key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
-      {/* Row 2 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Work Preference <span className="text-red-500">*</span></label>
-          <input
-            type="text"
+          <label className="block text-gray-300 text-sm mb-2">Work Preference</label>
+          <select
             name="profWorkPreference"
             value={formData.profWorkPreference}
             onChange={handleChange}
-            placeholder="Enter Work Preference"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-          />
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
+          >
+            <option value="">Select Work Preference</option>
+            <option value="remote">Remote</option>
+            <option value="onsite">On-site</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="flexible">Flexible</option>
+            <option value="contract">Contract</option>
+            <option value="freelance">Freelance</option>
+          </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Years of Experience</label>
-          <input
-            type="text"
+          <select
             name="yearsExperience"
             value={formData.yearsExperience}
             onChange={handleChange}
-            placeholder="Enter Years of Experience"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-          />
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
+          >
+            <option value="">Select Experience</option>
+            <option value="0-1">0-1 years</option>
+            <option value="1-3">1-3 years</option>
+            <option value="3-5">3-5 years</option>
+            <option value="5-10">5-10 years</option>
+            <option value="10-15">10-15 years</option>
+            <option value="15+">15+ years</option>
+          </select>
         </div>
         <div>
           <label className="block text-gray-300 text-sm mb-2">Skills & Technologies</label>
@@ -588,10 +908,10 @@ const Register = () => {
             onChange={handleChange}
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           >
-            <option value="">Enter Skills & Technologies</option>
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="react">React</option>
+            <option value="">Select Primary Skill</option>
+            {skillsOptions.map(skill => (
+              <option key={skill} value={skill}>{skill}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -600,8 +920,7 @@ const Register = () => {
 
   const renderSocialInfo = () => (
     <div className="space-y-6">
-      {/* Row 1 */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Name</label>
           <input
@@ -614,7 +933,7 @@ const Register = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-300 text-sm mb-2">Social Category <span className="text-red-500">*</span></label>
+          <label className="block text-gray-300 text-sm mb-2">Social Category</label>
           <select
             name="socialCategory"
             value={formData.socialCategory}
@@ -622,9 +941,16 @@ const Register = () => {
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           >
             <option value="">Select Category</option>
-            <option value="sports">Sports</option>
-            <option value="arts">Arts</option>
+            <option value="sports">Sports & Fitness</option>
+            <option value="arts">Arts & Culture</option>
             <option value="music">Music</option>
+            <option value="travel">Travel</option>
+            <option value="food">Food & Cooking</option>
+            <option value="reading">Reading & Literature</option>
+            <option value="gaming">Gaming</option>
+            <option value="volunteering">Volunteering</option>
+            <option value="networking">Professional Networking</option>
+            <option value="other">Other</option>
           </select>
         </div>
         <div>
@@ -634,24 +960,23 @@ const Register = () => {
             name="hobbies"
             value={formData.hobbies}
             onChange={handleChange}
-            placeholder="Enter Hobbies"
+            placeholder="Enter your hobbies (comma separated)"
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
             required
           />
         </div>
       </div>
 
-      {/* Row 2 */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">What is your biggest motivation to join Ekam Global Network?</label>
-          <input
-            type="text"
+          <textarea
             name="motivation"
             value={formData.motivation}
             onChange={handleChange}
-            placeholder="Enter your answer"
-            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
+            placeholder="Share your motivation..."
+            rows="4"
+            className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors resize-none"
           />
         </div>
         <div>
@@ -663,10 +988,27 @@ const Register = () => {
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 transition-colors"
           >
             <option value="">Select your answer</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-            <option value="sometimes">Sometimes</option>
+            <option value="yes">Yes, always</option>
+            <option value="sometimes">Sometimes, depends on schedule</option>
+            <option value="local-only">Local events only</option>
+            <option value="no">No, unable to travel</option>
           </select>
+          
+          {/* Additional preferences */}
+          <div className="mt-4">
+            <label className="block text-gray-300 text-sm mb-2">Preferred event types</label>
+            <div className="space-y-2">
+              {['Networking Events', 'Workshops', 'Social Gatherings', 'Business Meetups', 'Cultural Events'].map(eventType => (
+                <label key={eventType} className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-600 bg-gray-800 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span className="text-gray-300 text-sm">{eventType}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -683,14 +1025,11 @@ const Register = () => {
   };
 
   const renderProgressBar = () => {
-    // Progress with 3 break points: 0%, 50%, 100%
     const getProgressForStep = (step) => {
       if (step === 0) return 0;
       if (step === 1) return 33;
       if (step === 2) return 66;
-      if (step === 3) return 97;
-      if (step === 4) return 100;
-
+      if (step === 3) return 100;
       return 100;
     };
 
@@ -698,7 +1037,6 @@ const Register = () => {
 
     return (
       <div className="mb-8">
-        {/* Progress Labels with Step Titles and Icons */}
         <div className="flex justify-between mb-2 px-1">
           {steps.map((step, index) => (
             <div
@@ -707,7 +1045,7 @@ const Register = () => {
                 index <= currentStep ? 'text-orange-400' : 'text-gray-400'
               }`}
             >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1  ${
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${
                 index <= currentStep ? 'bg-orange-400 text-white' : 'bg-gray-600 text-gray-400'
               }`}>
                 {step.icon}
@@ -719,7 +1057,6 @@ const Register = () => {
           ))}
         </div>
 
-        {/* Progress Bar with 3 break points */}
         <div className="w-full bg-gray-600 rounded-full h-1">
           <motion.div
             className="bg-orange-500 h-1 rounded-full"
@@ -733,7 +1070,7 @@ const Register = () => {
   };
 
   return (
-    <div className="h-fit  bg-gray-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
       <AnimatePresence>
         {success && (
           <motion.div
@@ -762,115 +1099,93 @@ const Register = () => {
       <div className="bg-white py-4 relative z-10">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-1">
-            E<span className="text-orange-500">.</span>K<span className="text-orange-500">.</span>A<span className="text-orange-500">.</span>M
+            E<span className="text-orange-500">K</span>A<span className="text-orange-500">M</span>
           </h1>
           <p className="text-gray-600 text-sm">One Network Infinite Aspirations</p>
         </div>
       </div>
 
       <div className="bg-gray-900 py-6">
-        <div className="container mx-auto px-6">
+        <div className="w-full px-6">
           <h2 className="text-2xl font-semibold text-center mb-8 text-white">
-            {isLogin ? "Welcome Back" : "Ekam Global Network registration"}
+            Ekam Global Network Registration
           </h2>
 
-          
-          {/* Progress Bar - Only show for registration */}
-          {!isLogin && renderProgressBar()}
+          {renderProgressBar()}
 
-          {/* Form Container */}
           <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 w-full">
             <form onSubmit={handleSubmit} className="space-y-8">
-              {isLogin ? (
-                <div className="min-h-[300px] flex items-center">
-                  {renderLoginForm()}
-                </div>
-              ) : (
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentStep}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="min-h-[400px]"
-                  >
-                    {renderStepContent()}
-                  </motion.div>
-                </AnimatePresence>
-              )}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="min-h-[400px]"
+                >
+                  {renderStepContent()}
+                </motion.div>
+              </AnimatePresence>
 
-              {/* Navigation Buttons */}
-              <div className="flex justify-center pt-6">
-                {isLogin ? (
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-12 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Signing In...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Sign In</span>
-                        <FaArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="flex space-x-4">
-                    {currentStep > 0 && (
-                      <button
-                        type="button"
-                        onClick={handlePrev}
-                        className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-all duration-300 text-lg"
-                      >
-                        Previous
-                      </button>
-                    )}
-                    {currentStep < steps.length - 1 ? (
-                      <button
-                        type="button"
-                        onClick={handleNext}
-                        className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 text-lg"
-                      >
-                        Next
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-                      >
-                        {loading ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            <span>Submitting...</span>
-                          </div>
-                        ) : (
-                          "Submit"
-                        )}
-                      </button>
-                    )}
-                  </div>
-                )}
+              <div className="flex justify-between items-center pt-6">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-300 text-sm border border-red-500"
+                  title="Reset entire form"
+                >
+                  Reset Form
+                </button>
+
+                <div className="flex space-x-4">
+                  {currentStep > 0 && (
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-all duration-300 text-lg"
+                    >
+                      Previous
+                    </button>
+                  )}
+                  {currentStep < steps.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 text-lg"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                    >
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Submitting...</span>
+                        </div>
+                      ) : (
+                        "Submit Registration"
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
 
-            {/* Toggle Auth Mode */}
             <div className="mt-8 text-center">
               <p className="text-gray-400 mb-2">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                Already have an account?
               </p>
               <button
                 type="button"
-                onClick={toggleAuthMode}
+                onClick={() => navigate("/login")}
                 className="text-orange-400 hover:text-orange-300 font-medium transition-colors duration-300 underline underline-offset-2"
               >
-                {isLogin ? "Create New Registration" : "Sign In to Existing Account"}
+                Sign In to Existing Account
               </button>
             </div>
           </div>

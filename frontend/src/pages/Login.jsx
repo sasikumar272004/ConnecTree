@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,10 +18,41 @@ const Login = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const otpRefs = useRef([]);
 
   const navigate = useNavigate();
   const particlesInit = async (engine) => await loadFull(engine);
+
+  // Initialize refs array
+  useEffect(() => {
+    otpRefs.current = otpRefs.current.slice(0, 6);
+  }, []);
+
+  // Load saved data from localStorage on component mount
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('loginFormData');
+    const savedForgotOpen = localStorage.getItem('loginForgotOpen');
+    const savedForgotStep = localStorage.getItem('loginForgotStep');
+    const savedForgotEmail = localStorage.getItem('loginForgotEmail');
+    const savedOtpDigits = localStorage.getItem('loginOtpDigits');
+
+    if (savedFormData) {
+      setFormData(JSON.parse(savedFormData));
+    }
+    if (savedForgotOpen) {
+      setForgotOpen(JSON.parse(savedForgotOpen));
+    }
+    if (savedForgotStep) {
+      setForgotStep(parseInt(savedForgotStep));
+    }
+    if (savedForgotEmail) {
+      setForgotEmail(savedForgotEmail);
+    }
+    if (savedOtpDigits) {
+      setOtpDigits(JSON.parse(savedOtpDigits));
+    }
+  }, []);
 
   const particlesOptions = {
     fullScreen: { enable: true, zIndex: -1 },
@@ -38,8 +69,67 @@ const Login = () => {
     background: { color: "#1a202c" },
   };
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const newFormData = { ...formData, [e.target.name]: e.target.value };
+    setFormData(newFormData);
+    localStorage.setItem('loginFormData', JSON.stringify(newFormData));
+  };
+
+  const handleOtpChange = (index, value) => {
+    // Only allow single digit numbers
+    if (value && !/^\d$/.test(value)) return;
+
+    const newOtpDigits = [...otpDigits];
+    newOtpDigits[index] = value;
+    setOtpDigits(newOtpDigits);
+    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
+
+    // Auto focus next input
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    // Handle backspace
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        // If current field is empty, move to previous field and clear it
+        const newOtpDigits = [...otpDigits];
+        newOtpDigits[index - 1] = "";
+        setOtpDigits(newOtpDigits);
+        localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
+        otpRefs.current[index - 1]?.focus();
+      }
+    }
+    // Handle arrow keys
+    else if (e.key === 'ArrowLeft' && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+    else if (e.key === 'ArrowRight' && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text');
+    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
+    
+    const newOtpDigits = [...otpDigits];
+    digits.forEach((digit, index) => {
+      if (index < 6) {
+        newOtpDigits[index] = digit;
+      }
+    });
+    setOtpDigits(newOtpDigits);
+    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
+
+    // Focus the next empty field or the last field
+    const nextEmptyIndex = newOtpDigits.findIndex(digit => !digit);
+    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+    otpRefs.current[focusIndex]?.focus();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,6 +150,12 @@ const Login = () => {
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      // Clear form data on successful login
+      localStorage.removeItem('loginFormData');
+      localStorage.removeItem('loginForgotOpen');
+      localStorage.removeItem('loginForgotStep');
+      localStorage.removeItem('loginForgotEmail');
+      localStorage.removeItem('loginOtpDigits');
       setSuccess(true);
       toast.success("Login successful!");
       setTimeout(() => navigate("/Home"), 2000);
@@ -74,7 +170,39 @@ const Login = () => {
     setForgotOpen(false);
     setForgotStep(1);
     setForgotEmail("");
-    setOtp("");
+    setOtpDigits(["", "", "", "", "", ""]);
+    // Clear forgot password data from localStorage
+    localStorage.removeItem('loginForgotOpen');
+    localStorage.removeItem('loginForgotStep');
+    localStorage.removeItem('loginForgotEmail');
+    localStorage.removeItem('loginOtpDigits');
+  };
+
+  // Save forgot password states to localStorage
+  const handleForgotOpen = (value) => {
+    setForgotOpen(value);
+    localStorage.setItem('loginForgotOpen', JSON.stringify(value));
+  };
+
+  const handleForgotStep = (value) => {
+    setForgotStep(value);
+    localStorage.setItem('loginForgotStep', value.toString());
+  };
+
+  const handleForgotEmail = (value) => {
+    setForgotEmail(value);
+    localStorage.setItem('loginForgotEmail', value);
+  };
+
+  const handleVerifyOtp = () => {
+    const otpString = otpDigits.join('');
+    if (otpString.length !== 6) {
+      toast.error("Please enter all 6 digits");
+      return;
+    }
+    // Add your OTP verification logic here
+    console.log("OTP to verify:", otpString);
+    resetForgotFlow();
   };
 
   return (
@@ -167,7 +295,7 @@ const Login = () => {
                       <div className="text-right mt-2">
                         <button
                           type="button"
-                          onClick={() => setForgotOpen(true)}
+                          onClick={() => handleForgotOpen(true)}
                           className="text-sm text-orange-400 hover:text-orange-300"
                         >
                           Forgot Password?
@@ -202,12 +330,12 @@ const Login = () => {
                       <input
                         type="email"
                         value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
+                        onChange={(e) => handleForgotEmail(e.target.value)}
                         placeholder="Your Email Address"
                         className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
                       />
                       <button
-                        onClick={() => setForgotStep(2)}
+                        onClick={() => handleForgotStep(2)}
                         className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
                       >
                         Send OTP
@@ -217,24 +345,48 @@ const Login = () => {
 
                   {forgotStep === 2 && (
                     <>
-                      <p className="text-gray-300 text-center">
+                      <p className="text-gray-300 text-center mb-6">
                         Enter the 6-digit OTP sent to <br />
                         <span className="text-orange-400">{forgotEmail}</span>
                       </p>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        placeholder="Enter OTP"
-                        className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 text-center tracking-widest"
-                      />
-                      <button
-                        onClick={resetForgotFlow}
-                        className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
-                      >
-                        Verify OTP
-                      </button>
+                      
+                      {/* OTP Input Boxes */}
+                      <div className="flex justify-center space-x-3 mb-8">
+                        {otpDigits.map((digit, index) => (
+                          <motion.input
+                            key={index}
+                            ref={(el) => (otpRefs.current[index] = el)}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            onPaste={index === 0 ? handleOtpPaste : undefined}
+                            className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-800/50 border-2 border-gray-700 rounded-xl text-white text-center text-xl font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 hover:border-gray-600"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: index * 0.1, duration: 0.3 }}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="space-y-4">
+                        <button
+                          onClick={handleVerifyOtp}
+                          className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                        >
+                          Verify OTP
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => handleForgotOpen(false)}
+                          className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold transition-all duration-300"
+                        >
+                          Back to Login
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

@@ -8,59 +8,238 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
-// Register a new user
+// Register a new user - EXPANDED VERSION
 exports.registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
   try {
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Destructure all fields from request body
+    const {
+      // Basic Information - Required
+      name, email, password, phone, gender, country, chapter, joinDate,
+      
+      // Basic Information - Optional
+      dateOfBirth, streetAddress, city, state, pincode, expectations, profilePhoto,
+      
+      // Business Information
+      businessName, sponsorName, contactRole, gstNumber, businessCategory,
+      establishedYear, companySize, businessRegNumber, subCategory,
+      headquarters, workPreference, panNumber, shortDescription,
+      
+      // Professional Information - Required
+      professionalName,
+      
+      // Professional Information - Optional
+      role, professionalCategory, professionalWorkPreference,
+      yearsExperience, skillsTechnologies,
+      
+      // Social & Hobbies Information - Required
+      hobbies,
+      
+      // Social & Hobbies Information - Optional
+      socialName, socialCategory, motivation, travelAvailable,
+      
+      // Form Metadata
+      registrationStep, completedSteps, formVersion
+    } = req.body;
+
+    // Validate required fields
+    const requiredFields = {
+      name: name,
+      email: email,
+      password: password,
+      phone: phone,
+      gender: gender,
+      country: country,
+      chapter: chapter,
+      joinDate: joinDate,
+      professionalName: professionalName,
+      hobbies: hobbies
+    };
+
+    // Check for missing required fields
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value || value.toString().trim() === '')
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        message: "Missing required fields", 
+        missingFields: missingFields 
+      });
     }
 
-    const existingUser = await User.findOne({ email });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
+      return res.status(400).json({ message: "Invalid phone number format" });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "User already exists with this email" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Check for duplicate phone (optional, remove if not needed)
+    const existingPhone = await User.findOne({ phone: phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already registered" });
+    }
 
-    const user = new User({ name, email, password: hashedPassword });
+    // Create user object with all fields
+    const userData = {
+      // Basic Information
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: password, // Will be hashed by pre-save middleware
+      phone: phone.trim(),
+      gender: gender,
+      country: country,
+      chapter: chapter,
+      joinDate: new Date(joinDate),
+      
+      // Optional Basic Information
+      ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+      ...(streetAddress && { streetAddress: streetAddress.trim() }),
+      ...(city && { city: city.trim() }),
+      ...(state && { state: state.trim() }),
+      ...(pincode && { pincode: pincode.trim() }),
+      ...(expectations && { expectations: expectations.trim() }),
+      ...(profilePhoto && { profilePhoto: profilePhoto }),
+      
+      // Business Information
+      ...(businessName && { businessName: businessName.trim() }),
+      ...(sponsorName && { sponsorName: sponsorName.trim() }),
+      ...(contactRole && { contactRole: contactRole }),
+      ...(gstNumber && { gstNumber: gstNumber.trim().toUpperCase() }),
+      ...(businessCategory && { businessCategory: businessCategory }),
+      ...(establishedYear && { establishedYear: parseInt(establishedYear) }),
+      ...(companySize && { companySize: companySize }),
+      ...(businessRegNumber && { businessRegNumber: businessRegNumber.trim() }),
+      ...(subCategory && { subCategory: subCategory.trim() }),
+      ...(headquarters && { headquarters: headquarters.trim() }),
+      ...(workPreference && { workPreference: workPreference }),
+      ...(panNumber && { panNumber: panNumber.trim().toUpperCase() }),
+      ...(shortDescription && { shortDescription: shortDescription.trim() }),
+      
+      // Professional Information
+      professionalName: professionalName.trim(),
+      ...(role && { role: role.trim() }),
+      ...(professionalCategory && { professionalCategory: professionalCategory }),
+      ...(professionalWorkPreference && { professionalWorkPreference: professionalWorkPreference }),
+      ...(yearsExperience && { yearsExperience: yearsExperience }),
+      ...(skillsTechnologies && { skillsTechnologies: skillsTechnologies.trim() }),
+      
+      // Social & Hobbies Information
+      hobbies: hobbies.trim(),
+      ...(socialName && { socialName: socialName.trim() }),
+      ...(socialCategory && { socialCategory: socialCategory }),
+      ...(motivation && { motivation: motivation.trim() }),
+      ...(travelAvailable && { travelAvailable: travelAvailable }),
+      
+      // Form Metadata
+      registrationStep: registrationStep || 'complete',
+      completedSteps: completedSteps || [0, 1, 2, 3],
+      formVersion: formVersion || '2.0',
+      
+      // Additional metadata
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    };
+
+    // Create and save user
+    const user = new User(userData);
     await user.save();
 
     // Generate token
     const token = generateToken(user._id);
 
-    res.status(201).json({ message: "User registered successfully", user, token });
+    // Return success response with public profile (excluding sensitive data)
+    const publicProfile = user.getPublicProfile();
+
+    console.log(`New user registered: ${email} - Chapter: ${chapter}`);
+
+    res.status(201).json({ 
+      message: "User registered successfully",
+      user: publicProfile,
+      token: token,
+      completedSteps: completedSteps || [0, 1, 2, 3]
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Registration error:', error);
+    
+    // Handle specific mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationErrors 
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({ 
+        message: `${field} already exists` 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Registration failed. Please try again.",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
-// Login a user
+// Login a user - UNCHANGED (works with expanded model)
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Use the matchPassword method from the model
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
     // Generate token
     const token = generateToken(user._id);
 
-    res.status(200).json({ message: "Logged in successfully", token, user });
+    // Return public profile
+    const publicProfile = user.getPublicProfile();
+
+    res.status(200).json({ 
+      message: "Logged in successfully", 
+      token, 
+      user: publicProfile 
+    });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Logout a user
+// Logout a user - UNCHANGED
 exports.logoutUser = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -84,16 +263,20 @@ exports.logoutUser = async (req, res) => {
   }
 };
 
-// Get user profile
+// Get user profile - ENHANCED to return full profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
+    // Return public profile (password and sensitive data excluded)
+    const publicProfile = user.getPublicProfile();
+
+    res.status(200).json(publicProfile);
   } catch (error) {
+    console.error('Get profile error:', error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
