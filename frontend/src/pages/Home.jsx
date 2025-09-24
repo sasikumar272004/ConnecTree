@@ -634,30 +634,29 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <div className="bg-white text-gray-900 px-6 py-4 flex items-center justify-between">
+      <div className="bg-grey-800/30 text-gray-900  flex items-center justify-between"> 
         <div className="flex items-center">
-          <div className="text-2xl font-bold">
-            E<span className="text-orange-500">K</span>A<span className="text-orange-500">M</span>
-          </div>
-          <div className="ml-2 text-xs text-gray-600">
-            One Network Infinite Aspirations
-          </div>
+          <img
+      src="../../assests/Screenshot (100).png"
+      alt="EKAM Logo"
+      className=" h-23 object-cover" 
+    />
         </div>
         
         <div className="flex items-center space-x-4">
-          <Bell className="text-gray-600 text-xl cursor-pointer hover:text-orange-500 transition-colors" />
+          <Bell className="text-gray-100 scale-y-[1.2] text-xl cursor-pointer hover:text-orange-500 transition-colors" />
           
           <div className="relative user-menu-container">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 cursor-pointer bg-white/20 mr-5 px-3 py-2 rounded-lg transition-colors"
             >
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8  bg-orange-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-medium">
                   {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </span>
               </div>
-              <span className="font-medium text-gray-900">
+              <span className="font-medium text-gray-100">
                 {user?.name || 'User'}
               </span>
               <ChevronDown className={`text-gray-600 text-sm transition-transform ${
@@ -712,51 +711,58 @@ const Home = () => {
       </div>
 
       {/* Navigation Bar */}
-      <div className="bg-slate-900 relative dropdown-container">
-        <div className="flex items-center">
-          {navigationTabs.map((tabItem) => (
-            <div key={tabItem.id} className="flex-1">
-              <button
-                onClick={() => handleTabClick(tabItem.id)}
-                className={`w-full px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
-                  tab === tabItem.id
-                    ? 'bg-slate-800 text-orange-400 border-b-2 border-orange-500'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <tabItem.icon className="text-sm w-4 h-4" />
-                <span>{tabItem.label}</span>
-                {tabItem.id === 'business' && (
-                  <ChevronDown className={`text-xs w-3 h-3 transition-transform ${
-                    activeDropdown === 'business' ? 'rotate-180' : ''
-                  }`} />
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
+  <div className="relative dropdown-container bg-gradient-to-b from-gray-950 border-t-white/20 border-t-[.1px] to-gray-900 flex items-center justify-around">
+  {navigationTabs.map((tabItem) => {
+    const isActiveTab = tab === tabItem.id || (tabItem.id === 'business' && activeDropdown === 'business');
+
+    return (
+      <div key={tabItem.id} className="flex-1 relative"> {/* Make this relative */}
+        <button
+          onClick={() => handleTabClick(tabItem.id)}
+          className={`w-full px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
+            isActiveTab
+              ? 'text-orange-400'
+              : 'text-gray-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <span>{tabItem.label}</span>
+          {tabItem.id === 'business' && (
+            <ChevronDown
+              className={`text-xs w-3 h-3 transition-transform ${
+                activeDropdown === 'business' ? 'rotate-180' : ''
+              } ${isActiveTab ? 'text-orange-400' : 'text-gray-400'}`}
+            />
+          )}
+        </button>
 
         {/* Business Dropdown Menu */}
-        {activeDropdown === 'business' && (
-          <div className="absolute top-full w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 mt-1" 
-               style={{ left: `${(100/6) * 1}%` }}>
-            {businessSubmenu.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleSubmenuClick(item.id)}
-                className={`w-full px-4 py-3 flex items-center space-x-3 text-left transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
-                  section === item.id
-                    ? 'bg-orange-500 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-700'
-                }`}
-              >
-                <item.icon className="text-sm flex-shrink-0 w-4 h-4" />
-                <span className="text-sm">{item.label}</span>
-              </button>
-            ))}
+        {tabItem.id === 'business' && activeDropdown === 'business' && (
+          <div className="absolute top-full left-0 w-70 bg-gray-600 border border-slate-700 rounded-lg shadow-2xl z-50 mt-1">
+            {businessSubmenu.map((item) => {
+              const isActive = section === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSubmenuClick(item.id)}
+                  className={`w-full px-4 py-2 flex items-center space-x-3 text-left transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
+                    isActive
+                      ? 'text-orange-400'
+                      : 'text-gray-100 hover:text-white hover:bg-slate-700'
+                  }`}
+                >
+                
+                  <span className="text-sm">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+    );
+  })}
+</div>
+
+
 
       {/* Main Content Area - FIXED: Ensure proper height and rendering */}
       <div className="flex-1 min-h-[calc(100vh-140px)]">

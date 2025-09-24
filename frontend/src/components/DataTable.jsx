@@ -92,7 +92,7 @@ const DataTable = ({
   }
 
   return (
-    <div className="bg-slate-950 p-6">
+    <div className="bg-slate-950 py-6 px-10">
       {/* Header with breadcrumb */}
       <div className="mb-6">
         <div className="text-sm text-slate-400 mb-2">
@@ -109,7 +109,7 @@ const DataTable = ({
               {filter.type === 'date' ? (
                 <input
                   type="date"
-                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm h-10"
+                  className="bg-slate-800 border border-slate-700 rounded px-12 py-2 text-white text-sm h-10"
                   value={filterValues[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                 />
@@ -137,7 +137,7 @@ const DataTable = ({
               )}
             </div>
           ))}
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded transition-colors h-10">
+          <button className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-2 rounded transition-colors h-10">
             Search
           </button>
         </div>
@@ -145,10 +145,10 @@ const DataTable = ({
         <div className="flex items-center space-x-3">
           {showExportPrint && (
             <>
-              <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">
+              <button className="bg-slate-950 border-amber-600 border-1 hover:bg-slate-600 text-white px-12 py-2 rounded transition-colors">
                 Export
               </button>
-              <button className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">
+              <button className="bg-slate-700 hover:bg-slate-600 text-white px-12 py-2 rounded transition-colors">
                 Print
               </button>
             </>
@@ -156,7 +156,7 @@ const DataTable = ({
           {showAddButton && onAdd && (
             <button 
               onClick={onAdd}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded flex items-center space-x-2 transition-colors"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-12 ml-8 py-2 rounded flex items-center space-x-2 transition-colors"
             >
               <FaPlus className="text-sm" />
               <span>{addButtonText}</span>
@@ -165,8 +165,9 @@ const DataTable = ({
         </div>
       </div>
 
-      {/* Table controls */}
-      <div className="flex items-center justify-between mb-4">
+     <div className="relative rounded-2xl p-[2px] border-2 border-slate-100/80 ">
+       {/* Table controls */}
+      <div className="flex items-center  p-3 justify-between mb-4">
         <div className="flex items-center space-x-2">
           <span className="text-sm text-slate-400">Show</span>
           <select
@@ -198,119 +199,89 @@ const DataTable = ({
       </div>
 
       {/* Data Table */}
-      <div className="border border-slate-700 rounded-lg overflow-hidden bg-slate-900">
-        <table className="w-full">
-          <thead className="bg-orange-500">
-            <tr>
-              {columns.map((column, index) => (
-                <th key={column.key} className={`px-4 py-3 text-left text-white font-medium text-sm ${
-                  index < columns.length - 1 ? 'border-r border-orange-400' : ''
-                }`}>
-                  {column.label}
-                  {column.sortable && <span className="ml-1 text-xs">↕</span>}
-                </th>
-              ))}
-              {showActions && (
-                <th className={`px-4 py-3 text-left text-white font-medium text-sm ${
-                  columns.length > 0 ? 'border-l border-orange-400' : ''
-                }`}>
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {/* Column filters row */}
-            <tr className="bg-slate-800">
-              {columns.map((column, index) => (
-                <td key={`filter-${column.key}`} className={`px-4 py-2 ${
-                  index < columns.length - 1 ? 'border-r border-slate-600' : ''
-                }`}>
-                  <input
-                    type="text"
-                    placeholder="Search"
-                    className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-xs"
-                    value={filterValues[column.key] || ''}
-                    onChange={(e) => handleFilterChange(column.key, e.target.value)}
-                  />
-                </td>
-              ))}
-              {showActions && (
-                <td className={`px-4 py-2 ${columns.length > 0 ? 'border-l border-slate-600' : ''}`}></td>
-              )}
-            </tr>
-            
-            {/* Data rows */}
-            {paginatedData.length > 0 ? (
-              paginatedData.map((item, rowIndex) => (
-                <tr 
-                  key={item.id || rowIndex} 
-                  className={`border-b border-slate-700 transition-colors ${
-                    rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
-                  } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
-                  onClick={() => clickableRows && handleRowClick(item)}
-                >
-                  {columns.map((column, colIndex) => (
-                    <td key={column.key} className={`px-4 py-3 text-slate-300 text-sm ${
-                      colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
-                    }`}>
-                      {column.render ? column.render(item[column.key], item) : item[column.key]}
-                    </td>
-                  ))}
-                  {showActions && (
-                    <td className={`px-4 py-3 ${columns.length > 0 ? 'border-l border-slate-600' : ''}`}>
-                      <div className="flex space-x-2">
-                        {onView && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onView(item);
-                            }}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="View"
-                          >
-                            <FaEye className="text-sm" />
-                          </button>
-                        )}
-                        {onEdit && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(item);
-                            }}
-                            className="text-yellow-400 hover:text-yellow-300 transition-colors"
-                            title="Edit"
-                          >
-                            <FaEdit className="text-sm" />
-                          </button>
-                        )}
-                        {onDelete && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(item);
-                            }}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete"
-                          >
-                            <FaTrash className="text-sm" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
-                  No data available
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+<div className="border border-slate-700 overflow-hidden bg-slate-900 rounded-2xl">
+  <table className="w-full table-fixed">
+    <thead className="bg-orange-500">
+      <tr>
+        {columns.map((column, index) => (
+          <th
+            key={column.key}
+            className={`px-4 py-3 text-left text-white font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+              index < columns.length - 1 ? 'border-r border-orange-400' : ''
+            }`}
+          >
+            {column.label}
+            {column.sortable && <span className="ml-1 text-xs">↕</span>}
+          </th>
+        ))}
+        {showActions && (
+          <th className="px-4 py-3 text-left text-gray-600 font-medium text-sm">
+            Actions
+          </th>
+        )}
+      </tr>
+    </thead>
+    <tbody>
+      {/* Column filters row */}
+      <tr className="bg-slate-900">
+        {columns.map((column, index) => (
+          <td
+            key={`filter-${column.key}`}
+            className={`px-4 py-2 overflow-hidden text-ellipsis whitespace-nowrap ${
+              index < columns.length - 1 ? 'border-r border-slate-600' : ''
+            }`}
+          >
+            <input
+              type="text"
+              placeholder="Search"
+              className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
+              value={filterValues[column.key] || ''}
+              onChange={(e) => handleFilterChange(column.key, e.target.value)}
+            />
+          </td>
+        ))}
+        {showActions && <td></td>}
+      </tr>
+
+      {/* Data rows */}
+      {paginatedData.length > 0 ? (
+        paginatedData.map((item, rowIndex) => (
+          <tr
+            key={item.id || rowIndex}
+            className={`border-b border-slate-700 transition-colors ${
+              rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
+            } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
+            onClick={() => clickableRows && handleRowClick(item)}
+          >
+            {columns.map((column, colIndex) => (
+              <td
+                key={column.key}
+                className={`px-4 py-3 text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+                  colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
+                }`}
+              >
+                {column.render ? column.render(item[column.key], item) : item[column.key]}
+              </td>
+            ))}
+            {showActions && <td>
+              <div className="flex space-x-2">
+                {/* Action buttons */}
+              </div>
+            </td>}
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
+            No data available
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+     </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

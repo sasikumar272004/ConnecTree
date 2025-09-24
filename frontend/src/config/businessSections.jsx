@@ -188,9 +188,9 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Completed' ? 'bg-green-600 text-white' : 
-              value === 'Scheduled' ? 'bg-blue-600 text-white' : 
-              'bg-yellow-600 text-white'
+              value === 'Completed' ? ' text-gray-300' : 
+              value === 'Scheduled' ? ' text-gray-300' : 
+              'bg-yellow-600 text-gray-300'
             }`}>
               {value}
             </span>
@@ -274,10 +274,10 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Closed' ? 'bg-green-600 text-white' : 
-              value === 'In Progress' ? 'bg-blue-600 text-white' : 
-              value === 'New' ? 'bg-yellow-600 text-white' :
-              'bg-gray-600 text-white'
+              value === 'Closed' ? ' text-gray-300' : 
+              value === 'In Progress' ? ' text-gray-300' : 
+              value === 'New' ? ' text-gray-300' :
+              'bg-gray-600 text-gray-300'
             }`}>
               {value}
             </span>
@@ -292,7 +292,7 @@ export const businessSections = {
               <span>{value}</span>
               <button
                 onClick={() => window.handleAddBusinessClosed && window.handleAddBusinessClosed(item)}
-                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                className="bg-green-600 hover:bg-green-700 text-gray-300 px-2 py-1 rounded text-xs transition-colors"
               >
                 Add Business Closed
               </button>
@@ -372,10 +372,10 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Completed' ? 'bg-green-600 text-white' : 
-              value === 'In Progress' ? 'bg-blue-600 text-white' : 
-              value === 'Pending' ? 'bg-yellow-600 text-white' :
-              'bg-gray-600 text-white'
+              value === 'Completed' ? ' text-gray-400' : 
+              value === 'In Progress' ? ' text-gray-400' : 
+              value === 'Pending' ? ' text-gray-400' :
+              'bg-gray-600 text-gray-300'
             }`}>
               {value}
             </span>
@@ -388,9 +388,9 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Active' ? 'bg-green-600 text-white' : 
-              value === 'Inactive' ? 'bg-red-600 text-white' : 
-              'bg-gray-600 text-white'
+              value === 'Active' ? ' text-gray-300' : 
+              value === 'Inactive' ? ' text-gray-300' : 
+              'bg-gray-600 text-gray-300'
             }`}>
               {value}
             </span>
@@ -584,10 +584,10 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Completed' ? 'bg-green-600 text-white' : 
-              value === 'Scheduled' ? 'bg-blue-600 text-white' : 
-              value === 'Cancelled' ? 'bg-red-600 text-white' :
-              'bg-yellow-600 text-white'
+              value === 'Completed' ? ' text-gray-300' : 
+              value === 'Scheduled' ? ' text-gray-300' : 
+              value === 'Cancelled' ? ' text-gray-300' :
+              ' text-gray-300'
             }`}>
               {value}
             </span>
@@ -1103,9 +1103,9 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Published' ? 'bg-green-600 text-white' : 
-              value === 'Draft' ? 'bg-yellow-600 text-white' : 
-              'bg-gray-600 text-white'
+              value === 'Published' ? ' text-gray-300' : 
+              value === 'Draft' ? ' text-gray-300' : 
+              'bg-gray-600 text-gray-300'
             }`}>
               {value}
             </span>
@@ -1176,10 +1176,10 @@ export const businessSections = {
           sortable: true,
           render: (value) => (
             <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Completed' ? 'bg-green-600 text-white' : 
-              value === 'Scheduled' ? 'bg-blue-600 text-white' : 
-              value === 'Cancelled' ? 'bg-red-600 text-white' :
-              'bg-yellow-600 text-white'
+              value === 'Completed' ? ' text-gray-300' : 
+              value === 'Scheduled' ? ' text-gray-300' : 
+              value === 'Cancelled' ? ' text-gray-300' :
+              'bg-yellow-600 text-gray-300'
             }`}>
               {value}
             </span>

@@ -225,7 +225,7 @@ const Register = () => {
       // Basic Info - Required fields
       name: { value: formData.name, label: "Full Name" },
       email: { value: formData.email, label: "Email Address" },
-      password: { value: formData.password, label: "Password" },
+      password: { value: "connecttree", label: "Password" },
       phone: { value: formData.phone, label: "Phone Number" },
       gender: { value: formData.gender, label: "Gender" },
       country: { value: formData.country, label: "Country" },
@@ -424,30 +424,7 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Row 1.5 - Password */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="relative">
-          <label className="block text-gray-300 text-sm mb-2">Password <span className="text-red-500">*</span></label>
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full px-4 py-3 pr-12 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-            required
-          />
-          <button
-            type="button"
-            className="absolute right-4 top-10 text-gray-400 hover:text-orange-400 text-lg transition-colors"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <RiEyeOffLine /> : <RiEyeLine />}
-          </button>
-        </div>
-        <div></div>
-        <div></div>
-      </div>
+    
 
       {/* Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -599,7 +576,7 @@ const Register = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-gray-300 text-sm mb-2">Which chapter are you registering for? <span className="text-red-500">*</span></label>
           <select
@@ -626,7 +603,7 @@ const Register = () => {
             value={formData.expectations}
             onChange={handleChange}
             placeholder="Enter your expectations"
-            rows="3"
+            rows="1"
             className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors resize-none"
           />
         </div>
@@ -1096,14 +1073,15 @@ const Register = () => {
       <ToastContainer position="top-center" autoClose={3000} theme="dark" />
 
       {/* Header */}
-      <div className="bg-white py-4 relative z-10">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">
-            E<span className="text-orange-500">K</span>A<span className="text-orange-500">M</span>
-          </h1>
-          <p className="text-gray-600 text-sm">One Network Infinite Aspirations</p>
-        </div>
-      </div>
+      <div className="bg-white  relative z-10">
+  <div className="text-center">
+    <img
+      src="../../assests/Screenshot (101).png"
+      alt="EKAM Logo"
+      className="w-full h-38 object-cover" 
+    />
+  </div>
+</div>
 
       <div className="bg-gray-900 py-6">
         <div className="w-full px-6">
@@ -1113,7 +1091,7 @@ const Register = () => {
 
           {renderProgressBar()}
 
-          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 w-full">
+          <div className=" backdrop-blur-sm rounded-2xl px-2 w-full">
             <form onSubmit={handleSubmit} className="space-y-8">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -1129,51 +1107,43 @@ const Register = () => {
               </AnimatePresence>
 
               <div className="flex justify-between items-center pt-6">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-300 text-sm border border-red-500"
-                  title="Reset entire form"
-                >
-                  Reset Form
-                </button>
+  <div className="flex space-x-4 w-full">
+    {currentStep > 0 && (
+      <button
+        type="button"
+        onClick={handlePrev}
+        className="w-1/3 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-all duration-300 text-lg"
+      >
+        Previous
+      </button>
+    )}
+    {currentStep < steps.length - 1 ? (
+      <button
+        type="button"
+        onClick={handleNext}
+        className="w-1/3 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 text-lg"
+      >
+        Next
+      </button>
+    ) : (
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-1/3 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+      >
+        {loading ? (
+          <div className="flex items-center justify-center space-x-2">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <span>Submitting...</span>
+          </div>
+        ) : (
+          "Submit Registration"
+        )}
+      </button>
+    )}
+  </div>
+</div>
 
-                <div className="flex space-x-4">
-                  {currentStep > 0 && (
-                    <button
-                      type="button"
-                      onClick={handlePrev}
-                      className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-all duration-300 text-lg"
-                    >
-                      Previous
-                    </button>
-                  )}
-                  {currentStep < steps.length - 1 ? (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 text-lg"
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-                    >
-                      {loading ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          <span>Submitting...</span>
-                        </div>
-                      ) : (
-                        "Submit Registration"
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
             </form>
 
             <div className="mt-8 text-center">

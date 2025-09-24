@@ -234,188 +234,188 @@ const Login = () => {
       <ToastContainer position="top-center" autoClose={3000} theme="dark" />
 
       {/* Header */}
-      <div className="bg-white py-6 relative z-10">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            E<span className="text-orange-500">K</span>A
-            <span className="text-orange-500">M</span>
-          </h1>
-          <p className="text-gray-600">One Network Infinite Aspirations</p>
-        </div>
-      </div>
+      <div className="bg-white  relative z-10">
+  <div className="text-center">
+    <img
+      src="../../assests/Screenshot (101).png"
+      alt="EKAM Logo"
+      className="w-full h-26 object-cover" 
+    />
+  </div>
+</div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-gray-800/90 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-700"
-          >
-            <div className="p-10">
-              <h2 className="text-3xl font-bold text-center mb-8 text-white">
-                {forgotOpen ? "Forgot Password" : "Welcome Back"}
-              </h2>
 
-              {!forgotOpen ? (
-                // LOGIN FORM
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="space-y-6">
-                    <div className="relative">
-                      <FaEnvelope className="absolute left-4 top-4 text-orange-400 text-lg" />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email Address"
-                        className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                        required
-                      />
-                    </div>
-                    <div className="relative">
-                      <FaLock className="absolute left-4 top-4 text-orange-400 text-lg" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Password"
-                        className="w-full pl-12 pr-12 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-4 top-4 text-gray-400 hover:text-orange-400 text-lg transition-colors"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <RiEyeOffLine /> : <RiEyeLine />}
-                      </button>
-                      {/* Forgot Password Link */}
-                      <div className="text-right mt-2">
-                        <button
-                          type="button"
-                          onClick={() => handleForgotOpen(true)}
-                          className="text-sm text-orange-400 hover:text-orange-300"
-                        >
-                          Forgot Password?
-                        </button>
-                      </div>
-                    </div>
-                  </div>
 
+   <div className="container mx-auto px-4 font-light relative z-10">
+  <div className="max-w-3xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="backdrop-blur-lg rounded-2xl overflow-hidden"
+    >
+      <div className="px-10 py-4 scale-[.9]">
+        {/* Dynamic Title */}
+        <h2 className="text-4xl font-bold text-start ml-9 mb-8 text-white">
+          {!forgotOpen
+            ? "Login"
+            : forgotStep === 1
+            ? "Forgot Password"
+            : "Verification"}
+        </h2>
+
+        {!forgotOpen ? (
+          // LOGIN FORM
+          <form onSubmit={handleSubmit} className="space-y-8 max-w-[90%] mx-auto">
+            <div className="space-y-6">
+              <div className="relative">
+                <FaEnvelope className="absolute left-4 top-4 text-orange-400 text-lg" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email Address"
+                  className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+              <div className="relative">
+                <FaLock className="absolute left-4 top-4 text-orange-400 text-lg" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  className="w-full pl-12 pr-12 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 text-gray-400 hover:text-orange-400 text-lg transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <RiEyeOffLine /> : <RiEyeLine />}
+                </button>
+                {/* Forgot Password Link */}
+                <div className="text-right mt-2">
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    type="button"
+                    onClick={() => handleForgotOpen(true)}
+                    className="text-sm text-orange-400 hover:text-orange-300"
                   >
-                    {loading ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    ) : (
-                      <>
-                        <span>Sign In</span>
-                        <FaArrowRight className="w-4 h-4" />
-                      </>
-                    )}
+                    Forgot Password?
                   </button>
-                </form>
-              ) : (
-                // FORGOT PASSWORD FLOW
-                <div className="space-y-6">
-                  {forgotStep === 1 && (
-                    <>
-                      <p className="text-gray-300 text-center">
-                        Enter your email to reset password
-                      </p>
-                      <input
-                        type="email"
-                        value={forgotEmail}
-                        onChange={(e) => handleForgotEmail(e.target.value)}
-                        placeholder="Your Email Address"
-                        className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                      />
-                      <div className="space-y-3">
-                        <button
-                          onClick={() => handleForgotStep(2)}
-                          className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
-                        >
-                          Send OTP
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleForgotOpen(false)}
-                          className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold transition-all duration-300"
-                        >
-                          Back to Login
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {forgotStep === 2 && (
-                    <>
-                      <p className="text-gray-300 text-center mb-6">
-                        Enter the 6-digit OTP sent to <br />
-                        <span className="text-orange-400">{forgotEmail}</span>
-                      </p>
-                      
-                      {/* OTP Input Boxes */}
-                      <div className="flex justify-center space-x-3 mb-8">
-                        {otpDigits.map((digit, index) => (
-                          <motion.input
-                            key={index}
-                            ref={(el) => (otpRefs.current[index] = el)}
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handleOtpChange(index, e.target.value)}
-                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                            onPaste={index === 0 ? handleOtpPaste : undefined}
-                            className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-800/50 border-2 border-gray-700 rounded-xl text-white text-center text-xl font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 hover:border-gray-600"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: index * 0.1, duration: 0.3 }}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="space-y-4">
-                        <button
-                          onClick={handleVerifyOtp}
-                          className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-[1.02]"
-                        >
-                          Verify OTP
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => handleForgotOpen(false)}
-                          className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold transition-all duration-300"
-                        >
-                          Back to Login
-                        </button>
-                      </div>
-                    </>
-                  )}
                 </div>
-              )}
-
-              {!forgotOpen && (
-                <div className="mt-8 text-center">
-                  <p className="text-gray-400 mb-4">Don't have an account?</p>
-                  <a
-                    href="/register"
-                    className="text-orange-400 hover:text-orange-300 font-semibold transition-colors duration-300 underline decoration-2 underline-offset-4 hover:decoration-orange-300"
-                  >
-                    Create New Registration
-                  </a>
-                </div>
-              )}
+              </div>
             </div>
-          </motion.div>
-        </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <FaArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          // FORGOT PASSWORD FLOW
+          <div className="space-y-6 max-w-[90%] mx-auto">
+            {forgotStep === 1 && (
+              <div className="w-full">
+                {/* Label full width aligned */}
+                <label
+                  htmlFor="forgotEmail"
+                  className="block text-sm font-medium text-gray-500 mb-2"
+                >
+                  Email
+                </label>
+                <input
+                  id="forgotEmail"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => handleForgotEmail(e.target.value)}
+                  placeholder="Your Email Address"
+                  className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+                />
+                <div className="mt-4">
+                  <button
+                    onClick={() => handleForgotStep(2)}
+                    className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {forgotStep === 2 && (
+              <div className="w-full">
+                <p className="text-gray-300 text-start mb-6">
+                  <br />
+                </p>
+
+                {/* OTP Input Row (original size) */}
+               <div className="w-fit mx-auto flex justify-between mb-6">
+  {otpDigits.map((digit, index) => (
+    <motion.input
+      key={index}
+      ref={(el) => (otpRefs.current[index] = el)}
+      type="text"
+      inputMode="numeric"
+      maxLength={1}
+      value={digit}
+      onChange={(e) => handleOtpChange(index, e.target.value)}
+      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+      onPaste={index === 0 ? handleOtpPaste : undefined}
+      className="flex-1 mx-1 w-22 h-22 bg-gray-950/20 border-2 border-gray-700 rounded-xl text-white text-center text-xl font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 hover:border-gray-600"
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: index * 0.1, duration: 0.3 }}
+    />
+  ))}
+</div>
+
+
+                {/* Submit button aligned with inputs */}
+                <button
+                  onClick={handleVerifyOtp}
+                  className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  Submit
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!forgotOpen && (
+          <div className="mt-4 text-center">
+            
+            <a
+              href="/register"
+              className="text-orange-400 hover:text-orange-300 font-semibold transition-colors duration-300 underline decoration-2 underline-offset-4 hover:decoration-orange-300"
+            >
+              Create New Registration
+            </a>
+          </div>
+        )}
       </div>
+    </motion.div>
+  </div>
+</div>
+
+
+
+
 
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-50"></div>
