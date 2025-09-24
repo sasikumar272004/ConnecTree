@@ -1,6 +1,6 @@
 // components/DataTable.js
 import React, { useState } from 'react';
-import { FaSearch, FaPlus, FaEdit, FaEye, FaTrash } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEdit, FaEye, FaTrash, FaArrowLeft } from 'react-icons/fa';
 
 const DataTable = ({ 
   title, 
@@ -10,17 +10,53 @@ const DataTable = ({
   onEdit, 
   onView, 
   onDelete,
+  onRowClick,
   filters = [],
   showActions = true,
   showExportPrint = true,
   showAddButton = true,
   addButtonText = "Add",
-  searchPlaceholder = "Search..."
+  searchPlaceholder = "Search...",
+  clickableRows = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValues, setFilterValues] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState({ title: '', data: [], columns: [] });
+
+  const handleRowClick = (item) => {
+    if (clickableRows && onRowClick) {
+      onRowClick(item);
+    } else if (clickableRows && item.details) {
+      // Handle meetings section specifically
+      setModalData({
+        title: `Meeting Details - ${item.meetingDate}`,
+        data: item.details,
+        columns: [
+          { key: 'firstName', label: 'First Name', sortable: true },
+          { key: 'lastName', label: 'Last Name', sortable: true },
+          { key: 'palms', label: 'PALMS', sortable: true },
+          { key: 'rgi', label: 'RGI', sortable: true },
+          { key: 'rgo', label: 'RGO', sortable: true },
+          { key: 'pri', label: 'PRI', sortable: true },
+          { key: 'rro', label: 'RRO', sortable: true },
+          { key: 'visitors', label: 'Visitors', sortable: true },
+          { key: 'oneToOne', label: '121', sortable: true },
+          { key: 'tqGiven', label: 'TQ Given', sortable: true },
+          { key: 'testimonials', label: 'Testimonials', sortable: true }
+        ],
+        meetingInfo: {
+          meetingDate: item.meetingDate,
+          enteredBy: item.enteredBy,
+          enteredDate: item.enteredDate,
+          status: item.status
+        }
+      });
+      setShowModal(true);
+    }
+  };
 
   // Filter and search logic
   const filteredData = data.filter(item => {
@@ -45,6 +81,16 @@ const DataTable = ({
     setCurrentPage(1); // Reset to first page when filtering
   };
 
+  // If modal is shown, render full-screen modal instead of table
+  if (showModal) {
+    return (
+      <FullScreenModal 
+        modalData={modalData} 
+        onClose={() => setShowModal(false)} 
+      />
+    );
+  }
+
   return (
     <div className="bg-slate-950 p-6">
       {/* Header with breadcrumb */}
@@ -55,21 +101,21 @@ const DataTable = ({
       </div>
 
       {/* Date filters and action buttons */}
-      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-end justify-between mb-6 gap-4">
+        <div className="flex items-end space-x-4">
           {filters.map((filter) => (
             <div key={filter.key} className="flex flex-col">
               <label className="text-sm text-slate-400 mb-1">{filter.label}</label>
               {filter.type === 'date' ? (
                 <input
                   type="date"
-                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm"
+                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm h-10"
                   value={filterValues[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                 />
               ) : filter.type === 'select' ? (
                 <select
-                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm min-w-[150px]"
+                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm min-w-[150px] h-10"
                   value={filterValues[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                 >
@@ -84,14 +130,14 @@ const DataTable = ({
                 <input
                   type="text"
                   placeholder={filter.placeholder}
-                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm"
+                  className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm h-10"
                   value={filterValues[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                 />
               )}
             </div>
           ))}
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded transition-colors">
+          <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded transition-colors h-10">
             Search
           </button>
         </div>
@@ -152,24 +198,34 @@ const DataTable = ({
       </div>
 
       {/* Data Table */}
-      <div className="bg-slate-900 rounded-lg overflow-hidden">
+      <div className="border border-slate-700 rounded-lg overflow-hidden bg-slate-900">
         <table className="w-full">
           <thead className="bg-orange-500">
             <tr>
-              {columns.map((column) => (
-                <th key={column.key} className="px-4 py-3 text-left text-white font-medium text-sm">
+              {columns.map((column, index) => (
+                <th key={column.key} className={`px-4 py-3 text-left text-white font-medium text-sm ${
+                  index < columns.length - 1 ? 'border-r border-orange-400' : ''
+                }`}>
                   {column.label}
                   {column.sortable && <span className="ml-1 text-xs">↕</span>}
                 </th>
               ))}
-              {showActions && <th className="px-4 py-3 text-left text-white font-medium text-sm">Actions</th>}
+              {showActions && (
+                <th className={`px-4 py-3 text-left text-white font-medium text-sm ${
+                  columns.length > 0 ? 'border-l border-orange-400' : ''
+                }`}>
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {/* Column filters row */}
             <tr className="bg-slate-800">
-              {columns.map((column) => (
-                <td key={`filter-${column.key}`} className="px-4 py-2">
+              {columns.map((column, index) => (
+                <td key={`filter-${column.key}`} className={`px-4 py-2 ${
+                  index < columns.length - 1 ? 'border-r border-slate-600' : ''
+                }`}>
                   <input
                     type="text"
                     placeholder="Search"
@@ -179,24 +235,37 @@ const DataTable = ({
                   />
                 </td>
               ))}
-              {showActions && <td className="px-4 py-2"></td>}
+              {showActions && (
+                <td className={`px-4 py-2 ${columns.length > 0 ? 'border-l border-slate-600' : ''}`}></td>
+              )}
             </tr>
             
             {/* Data rows */}
             {paginatedData.length > 0 ? (
-              paginatedData.map((item, index) => (
-                <tr key={item.id || index} className="border-b border-slate-800 hover:bg-slate-800 transition-colors">
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3 text-slate-300 text-sm">
+              paginatedData.map((item, rowIndex) => (
+                <tr 
+                  key={item.id || rowIndex} 
+                  className={`border-b border-slate-700 transition-colors ${
+                    rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
+                  } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
+                  onClick={() => clickableRows && handleRowClick(item)}
+                >
+                  {columns.map((column, colIndex) => (
+                    <td key={column.key} className={`px-4 py-3 text-slate-300 text-sm ${
+                      colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
+                    }`}>
                       {column.render ? column.render(item[column.key], item) : item[column.key]}
                     </td>
                   ))}
                   {showActions && (
-                    <td className="px-4 py-3">
+                    <td className={`px-4 py-3 ${columns.length > 0 ? 'border-l border-slate-600' : ''}`}>
                       <div className="flex space-x-2">
                         {onView && (
                           <button
-                            onClick={() => onView(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onView(item);
+                            }}
                             className="text-blue-400 hover:text-blue-300 transition-colors"
                             title="View"
                           >
@@ -205,7 +274,10 @@ const DataTable = ({
                         )}
                         {onEdit && (
                           <button
-                            onClick={() => onEdit(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(item);
+                            }}
                             className="text-yellow-400 hover:text-yellow-300 transition-colors"
                             title="Edit"
                           >
@@ -214,7 +286,10 @@ const DataTable = ({
                         )}
                         {onDelete && (
                           <button
-                            onClick={() => onDelete(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(item);
+                            }}
                             className="text-red-400 hover:text-red-300 transition-colors"
                             title="Delete"
                           >
@@ -281,7 +356,229 @@ const DataTable = ({
   );
 };
 
-// components/DataForm.js
+// Full Screen Modal Component that mimics DataForm layout
+const FullScreenModal = ({ modalData, onClose }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterValues, setFilterValues] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Filter and search logic
+  const filteredData = modalData.data.filter(item => {
+    const matchesSearch = Object.values(item).some(value =>
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    const matchesFilters = Object.entries(filterValues).every(([key, value]) =>
+      !value || String(item[key]).toLowerCase().includes(String(value).toLowerCase())
+    );
+    
+    return matchesSearch && matchesFilters;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleFilterChange = (filterKey, value) => {
+    setFilterValues(prev => ({ ...prev, [filterKey]: value }));
+    setCurrentPage(1);
+  };
+
+  return (
+    <div className="bg-slate-950 p-6 min-h-screen">
+      {/* Header with breadcrumb - same as DataForm */}
+      <div className="mb-6">
+        <div className="text-sm text-slate-400 mb-2">
+          Business &gt; Meetings &gt; Meeting Details
+        </div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-white">
+            {modalData.title}
+          </h1>
+          <button
+            onClick={onClose}
+            className="flex items-center space-x-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+          >
+            <FaArrowLeft className="text-sm" />
+            <span>Back to Meetings</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Meeting Info Card - same structure as DataForm */}
+      <div className="max-w-full mx-auto">
+        <div className="bg-slate-900 rounded-lg border border-slate-700 p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Meeting Date</label>
+              <p className="text-white">{modalData.meetingInfo?.meetingDate}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Entered By</label>
+              <p className="text-white">{modalData.meetingInfo?.enteredBy}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Entered Date</label>
+              <p className="text-white">{modalData.meetingInfo?.enteredDate}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Status</label>
+              <span className={`px-2 py-1 rounded text-xs ${
+                modalData.meetingInfo?.status === 'Completed' ? 'bg-green-600 text-white' : 
+                modalData.meetingInfo?.status === 'Scheduled' ? 'bg-blue-600 text-white' : 
+                modalData.meetingInfo?.status === 'Cancelled' ? 'bg-red-600 text-white' :
+                'bg-yellow-600 text-white'
+              }`}>
+                {modalData.meetingInfo?.status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Meeting Details Table - same container structure as DataForm */}
+        <div className="bg-slate-900 rounded-lg border border-slate-700 p-6">
+          <h2 className="text-xl font-semibold text-white mb-6">Attendee Details</h2>
+          
+          {/* Table controls */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-slate-400">Show</span>
+              <select
+                className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm text-slate-400">entries</span>
+            </div>
+
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
+              <input
+                type="text"
+                placeholder="Search attendees..."
+                className="bg-slate-800 border border-slate-700 rounded pl-10 pr-4 py-2 text-white text-sm w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Data Table */}
+          <div className="border border-slate-700 rounded-lg overflow-hidden bg-slate-800">
+            <table className="w-full">
+              <thead className="bg-orange-500">
+                <tr>
+                  {modalData.columns.map((column, index) => (
+                    <th key={column.key} className={`px-4 py-3 text-left text-white font-medium text-sm ${
+                      index < modalData.columns.length - 1 ? 'border-r border-orange-400' : ''
+                    }`}>
+                      {column.label}
+                      {column.sortable && <span className="ml-1 text-xs">↕</span>}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {/* Column filters row */}
+                <tr className="bg-slate-800">
+                  {modalData.columns.map((column, index) => (
+                    <td key={`filter-${column.key}`} className={`px-4 py-2 ${
+                      index < modalData.columns.length - 1 ? 'border-r border-slate-600' : ''
+                    }`}>
+                      <input
+                        type="text"
+                        placeholder="Search"
+                        className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-xs"
+                        value={filterValues[column.key] || ''}
+                        onChange={(e) => handleFilterChange(column.key, e.target.value)}
+                      />
+                    </td>
+                  ))}
+                </tr>
+                
+                {/* Data rows */}
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((item, rowIndex) => (
+                    <tr key={item.id || rowIndex} className={`border-b border-slate-600 hover:bg-slate-700 transition-colors ${
+                      rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-750'
+                    }`}>
+                      {modalData.columns.map((column, colIndex) => (
+                        <td key={column.key} className={`px-4 py-3 text-slate-300 text-sm ${
+                          colIndex < modalData.columns.length - 1 ? 'border-r border-slate-600' : ''
+                        }`}>
+                          {column.render ? column.render(item[column.key], item) : item[column.key]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={modalData.columns.length} className="px-4 py-8 text-center text-slate-400">
+                      No attendee data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-slate-400">
+                Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} entries
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-slate-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => Math.abs(page - currentPage) <= 2)
+                  .map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 rounded transition-colors ${
+                        currentPage === page
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-slate-700 text-white hover:bg-slate-600'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))
+                }
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-slate-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// DataForm component remains the same
 const DataForm = ({ 
   title, 
   fields = [], 
@@ -297,12 +594,10 @@ const DataForm = ({
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
 
-  // Use editFields if provided and isEdit is true, otherwise use regular fields
   const currentFields = isEdit && editFields ? editFields : fields;
 
   const handleFieldChange = (fieldKey, value) => {
     setFormData(prev => ({ ...prev, [fieldKey]: value }));
-    // Clear error when user starts typing
     if (errors[fieldKey]) {
       setErrors(prev => ({ ...prev, [fieldKey]: null }));
     }
@@ -376,21 +671,18 @@ const DataForm = ({
 
   return (
     <div className="bg-slate-950 p-6">
-      {/* Header with breadcrumb */}
       <div className="mb-6">
         <div className="text-sm text-slate-400 mb-2">
           Business &gt; {title}
         </div>
       </div>
 
-      {/* Form Container */}
       <div className="max-w-4xl mx-auto">
         <div className="bg-slate-900 rounded-lg border border-slate-700 p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Create a grid layout for the form fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`${currentFields.length < 10 ? 'space-y-6' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'}`}>
               {currentFields.map((field) => (
-                <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2 lg:col-span-3' : ''}>
+                <div key={field.key} className={field.type === 'textarea' && currentFields.length >= 10 ? 'md:col-span-2 lg:col-span-3' : ''}>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     {field.label}
                     {field.required && <span className="text-red-500 ml-1">*</span>}
@@ -403,7 +695,6 @@ const DataForm = ({
               ))}
             </div>
 
-            {/* Form Actions */}
             <div className="flex items-center justify-end space-x-4 pt-6 border-t border-slate-700">
               {onCancel && (
                 <button

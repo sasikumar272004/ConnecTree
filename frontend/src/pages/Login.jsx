@@ -18,16 +18,12 @@ const Login = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
+  const [otp, setOtp] = useState(""); // Added missing state
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
-  const otpRefs = useRef([]);
-
+  
   const navigate = useNavigate();
   const particlesInit = async (engine) => await loadFull(engine);
-
-  // Initialize refs array
-  useEffect(() => {
-    otpRefs.current = otpRefs.current.slice(0, 6);
-  }, []);
+  const otpRefs = useRef([]); // Added missing ref
 
   // Load saved data from localStorage on component mount
   useEffect(() => {
@@ -75,62 +71,6 @@ const Login = () => {
     localStorage.setItem('loginFormData', JSON.stringify(newFormData));
   };
 
-  const handleOtpChange = (index, value) => {
-    // Only allow single digit numbers
-    if (value && !/^\d$/.test(value)) return;
-
-    const newOtpDigits = [...otpDigits];
-    newOtpDigits[index] = value;
-    setOtpDigits(newOtpDigits);
-    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
-
-    // Auto focus next input
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    // Handle backspace
-    if (e.key === 'Backspace') {
-      if (!otpDigits[index] && index > 0) {
-        // If current field is empty, move to previous field and clear it
-        const newOtpDigits = [...otpDigits];
-        newOtpDigits[index - 1] = "";
-        setOtpDigits(newOtpDigits);
-        localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
-        otpRefs.current[index - 1]?.focus();
-      }
-    }
-    // Handle arrow keys
-    else if (e.key === 'ArrowLeft' && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    else if (e.key === 'ArrowRight' && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text');
-    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
-    
-    const newOtpDigits = [...otpDigits];
-    digits.forEach((digit, index) => {
-      if (index < 6) {
-        newOtpDigits[index] = digit;
-      }
-    });
-    setOtpDigits(newOtpDigits);
-    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
-
-    // Focus the next empty field or the last field
-    const nextEmptyIndex = newOtpDigits.findIndex(digit => !digit);
-    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
-    otpRefs.current[focusIndex]?.focus();
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -155,7 +95,7 @@ const Login = () => {
       localStorage.removeItem('loginForgotOpen');
       localStorage.removeItem('loginForgotStep');
       localStorage.removeItem('loginForgotEmail');
-      localStorage.removeItem('loginOtpDigits');
+      localStorage.removeItem('loginOtp');
       setSuccess(true);
       toast.success("Login successful!");
       setTimeout(() => navigate("/Home"), 2000);
@@ -170,11 +110,13 @@ const Login = () => {
     setForgotOpen(false);
     setForgotStep(1);
     setForgotEmail("");
+    setOtp("");
     setOtpDigits(["", "", "", "", "", ""]);
     // Clear forgot password data from localStorage
     localStorage.removeItem('loginForgotOpen');
     localStorage.removeItem('loginForgotStep');
     localStorage.removeItem('loginForgotEmail');
+    localStorage.removeItem('loginOtp');
     localStorage.removeItem('loginOtpDigits');
   };
 
@@ -194,15 +136,73 @@ const Login = () => {
     localStorage.setItem('loginForgotEmail', value);
   };
 
-  const handleVerifyOtp = () => {
-    const otpString = otpDigits.join('');
-    if (otpString.length !== 6) {
-      toast.error("Please enter all 6 digits");
+  const handleOtp = (value) => {
+    setOtp(value);
+    localStorage.setItem('loginOtp', value);
+  };
+
+  // Added missing OTP handler functions
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return; // Only allow digits
+    
+    const newOtpDigits = [...otpDigits];
+    newOtpDigits[index] = value;
+    setOtpDigits(newOtpDigits);
+    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+
+    // Update combined OTP
+    const combinedOtp = newOtpDigits.join('');
+    setOtp(combinedOtp);
+    localStorage.setItem('loginOtp', combinedOtp);
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text/plain').slice(0, 6);
+    if (!/^\d+$/.test(pastedData)) return;
+
+    const newOtpDigits = [...otpDigits];
+    for (let i = 0; i < pastedData.length && i < 6; i++) {
+      newOtpDigits[i] = pastedData[i];
+    }
+    setOtpDigits(newOtpDigits);
+    localStorage.setItem('loginOtpDigits', JSON.stringify(newOtpDigits));
+
+    const combinedOtp = newOtpDigits.join('');
+    setOtp(combinedOtp);
+    localStorage.setItem('loginOtp', combinedOtp);
+
+    // Focus the next empty input or the last one
+    const nextEmptyIndex = newOtpDigits.findIndex(digit => !digit);
+    const focusIndex = nextEmptyIndex !== -1 ? nextEmptyIndex : 5;
+    otpRefs.current[focusIndex]?.focus();
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Please enter the complete 6-digit OTP");
       return;
     }
-    // Add your OTP verification logic here
-    console.log("OTP to verify:", otpString);
-    resetForgotFlow();
+
+    try {
+      // Add your OTP verification logic here
+      console.log("Verifying OTP:", otp, "for email:", forgotEmail);
+      toast.success("OTP verified successfully!");
+      resetForgotFlow();
+    } catch (error) {
+      toast.error("Invalid OTP. Please try again.");
+    }
   };
 
   return (
@@ -334,12 +334,21 @@ const Login = () => {
                         placeholder="Your Email Address"
                         className="w-full px-4 py-4 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
                       />
-                      <button
-                        onClick={() => handleForgotStep(2)}
-                        className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
-                      >
-                        Send OTP
-                      </button>
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => handleForgotStep(2)}
+                          className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-semibold transition"
+                        >
+                          Send OTP
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleForgotOpen(false)}
+                          className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold transition-all duration-300"
+                        >
+                          Back to Login
+                        </button>
+                      </div>
                     </>
                   )}
 

@@ -1,31 +1,33 @@
 // components/Home.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  FaBell, FaUser, FaChevronDown, FaHandshake, FaBuilding, 
-  FaGraduationCap, FaHeart, FaUsers, FaCog, FaExchangeAlt,
-  FaCalendarAlt, FaEye, FaComments, FaRss, FaUserFriends, FaSignOutAlt,
-  FaUserPlus, FaStar, FaGlobe, FaShareAlt
-} from 'react-icons/fa';
+  Bell, User, ChevronDown, Handshake, Building, 
+  GraduationCap, Heart, Users, Settings, ArrowLeftRight,
+  CalendarDays, Eye, MessageSquare, Rss, Users2, LogOut,
+  UserPlus, Star, Globe, Share, Cog
+} from 'lucide-react';
 
 // Import the components - adjust path based on your file structure
 import { DataTable, DataForm } from '../components/DataTable';
 import { businessSections, BusinessSectionManager } from '../config/businessSections';
+import { ConnectionsComponent, TestimonialsComponent } from '../components/ConnectionsTestimonialsComponents';
+// Add this import at the top with your other imports
+import MyFeedComponent from '../components/MyFeed'; // Adjust path as needed
 
 const Home = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Get URL parameters
+  const { tab = 'dashboard', section, view = 'table' } = useParams();
+  const navigate = useNavigate();
+  
+  // UI state
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [selectedSubmenu, setSelectedSubmenu] = useState(null);
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [currentView, setCurrentView] = useState('table');
   const [selectedItem, setSelectedItem] = useState(null);
-  // Add state to force re-renders when data changes
   const [dataUpdateTrigger, setDataUpdateTrigger] = useState(0);
-  // Add state for business closed form
   const [showBusinessClosedForm, setShowBusinessClosedForm] = useState(false);
   const [businessClosedSourceItem, setBusinessClosedSourceItem] = useState(null);
-  const navigate = useNavigate();
 
   // Load user data on component mount
   useEffect(() => {
@@ -72,48 +74,43 @@ const Home = () => {
   };
 
   const navigationTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: FaBuilding },
-    { id: 'business', label: 'Business', icon: FaHandshake },
-    { id: 'professional', label: 'Professional', icon: FaGraduationCap },
-    { id: 'social', label: 'Social', icon: FaHeart },
-    { id: 'groups', label: 'Groups', icon: FaUsers },
-    { id: 'settings', label: 'Settings', icon: FaCog }
+    { id: 'dashboard', label: 'Dashboard', icon: Building },
+    { id: 'business', label: 'Business', icon: Handshake },
+    { id: 'professional', label: 'Professional', icon: GraduationCap },
+    { id: 'social', label: 'Social', icon: Heart },
+    { id: 'groups', label: 'Groups', icon: Users },
+    { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
   const businessSubmenu = [
-    { id: 'p2p', label: 'P2P', icon: FaExchangeAlt },
-    { id: 'business-opportunity-received', label: 'Business Opportunity Received', icon: FaHandshake },
-    { id: 'business-opportunity-given', label: 'Business Opportunity Given', icon: FaHandshake },
-    { id: 'business-closed', label: 'Business Closed', icon: FaBuilding },
-    { id: 'meetings', label: 'Meetings', icon: FaCalendarAlt },
-    { id: 'connections', label: 'Connections', icon: FaUserFriends },
-    { id: 'testimonials', label: 'Testimonials', icon: FaStar },
-    { id: 'upcoming-events', label: 'Upcoming Events', icon: FaCalendarAlt },
-    { id: 'visitors', label: 'Visitors', icon: FaUserPlus },
-    { id: 'my-feeds', label: 'My Feeds', icon: FaRss },
-    { id: 'one-to-many', label: 'One to Many', icon: FaShareAlt }
+    { id: 'p2p', label: 'P2P', icon: ArrowLeftRight },
+    { id: 'business-opportunity-received', label: 'Business Opportunity Received', icon: Handshake },
+    { id: 'business-opportunity-given', label: 'Business Opportunity Given', icon: Handshake },
+    { id: 'business-closed', label: 'Business Closed', icon: Building },
+    { id: 'meetings', label: 'Meetings', icon: CalendarDays },
+    { id: 'connections', label: 'Connections', icon: Users2 },
+    { id: 'testimonials', label: 'Testimonials', icon: Star },
+    { id: 'upcoming-events', label: 'Upcoming Events', icon: CalendarDays },
+    { id: 'visitors', label: 'Visitors', icon: UserPlus },
+    { id: 'my-feeds', label: 'My Feeds', icon: Rss },
+    { id: 'one-to-many', label: 'One to Many', icon: Share }
   ];
 
   const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
     if (tabId === 'business') {
       setActiveDropdown(activeDropdown === 'business' ? null : 'business');
     } else {
       setActiveDropdown(null);
-      if (tabId !== 'business') {
-        setSelectedSubmenu(null);
-        setCurrentView('table');
-        setSelectedItem(null);
-        setShowBusinessClosedForm(false);
-        setBusinessClosedSourceItem(null);
-      }
+      navigate(`/home/${tabId}`);
+      setSelectedItem(null);
+      setShowBusinessClosedForm(false);
+      setBusinessClosedSourceItem(null);
     }
   };
 
   const handleSubmenuClick = (submenuId) => {
-    setSelectedSubmenu(submenuId);
+    navigate(`/home/business/${submenuId}`);
     setActiveDropdown(null);
-    setCurrentView('table');
     setSelectedItem(null);
     setShowBusinessClosedForm(false);
     setBusinessClosedSourceItem(null);
@@ -121,15 +118,15 @@ const Home = () => {
 
   // Business section handlers
   const handleAddNew = () => {
+    navigate(`/home/business/${section}/form`);
     setSelectedItem(null);
-    setCurrentView('form');
     setShowBusinessClosedForm(false);
     setBusinessClosedSourceItem(null);
   };
 
   const handleEdit = (item) => {
     setSelectedItem(item);
-    setCurrentView('form');
+    navigate(`/home/business/${section}/form`);
     setShowBusinessClosedForm(false);
     setBusinessClosedSourceItem(null);
   };
@@ -141,9 +138,9 @@ const Home = () => {
 
   const handleDelete = (item) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      const currentData = BusinessSectionManager.getSectionData(selectedSubmenu);
+      const currentData = BusinessSectionManager.getSectionData(section);
       const updatedData = currentData.filter(dataItem => dataItem.id !== item.id);
-      BusinessSectionManager.updateSectionData(selectedSubmenu, updatedData);
+      BusinessSectionManager.updateSectionData(section, updatedData);
       // Force re-render by updating trigger
       setDataUpdateTrigger(prev => prev + 1);
     }
@@ -152,17 +149,17 @@ const Home = () => {
   const handleFormSubmit = (formData) => {
     if (selectedItem) {
       // Update existing item
-      const currentData = BusinessSectionManager.getSectionData(selectedSubmenu);
+      const currentData = BusinessSectionManager.getSectionData(section);
       const updatedData = currentData.map(item => 
         item.id === selectedItem.id ? { ...item, ...formData } : item
       );
-      BusinessSectionManager.updateSectionData(selectedSubmenu, updatedData);
+      BusinessSectionManager.updateSectionData(section, updatedData);
     } else {
       // Add new item
-      BusinessSectionManager.addItemToSection(selectedSubmenu, formData);
+      BusinessSectionManager.addItemToSection(section, formData);
     }
     
-    setCurrentView('table');
+    navigate(`/home/business/${section}`);
     setSelectedItem(null);
     // Force re-render by updating trigger
     setDataUpdateTrigger(prev => prev + 1);
@@ -170,7 +167,7 @@ const Home = () => {
   };
 
   const handleFormCancel = () => {
-    setCurrentView('table');
+    navigate(`/home/business/${section}`);
     setSelectedItem(null);
   };
 
@@ -203,103 +200,128 @@ const Home = () => {
 
   // Get current section configuration
   const getCurrentSectionConfig = () => {
-    if (!selectedSubmenu) return null;
-    return BusinessSectionManager.getSectionConfig(selectedSubmenu);
+    if (!section) return null;
+    return BusinessSectionManager.getSectionConfig(section);
   };
 
   const renderBusinessContent = () => {
-    // Handle Business Closed form
-    if (showBusinessClosedForm) {
-      const businessClosedConfig = BusinessSectionManager.getSectionConfig('business-closed');
-      return (
-        <DataForm
-          title="Add Business Closed"
-          fields={businessClosedConfig.formConfig.fields}
-          initialData={{
-            referralName: businessClosedSourceItem?.referralName || '',
-            email: businessClosedSourceItem?.email || '',
-            phone: businessClosedSourceItem?.phone || '',
-            ...businessClosedSourceItem
-          }}
-          onSubmit={(formData) => {
-            BusinessSectionManager.addItemToSection('business-closed', formData);
-            setShowBusinessClosedForm(false);
-            setBusinessClosedSourceItem(null);
-            setDataUpdateTrigger(prev => prev + 1);
-          }}
-          onCancel={() => {
-            setShowBusinessClosedForm(false);
-            setBusinessClosedSourceItem(null);
-          }}
-          submitText="Add Business Closed"
-          cancelText="Cancel"
-        />
-      );
-    }
+    // Handle specific business sections with custom components
+    switch (section) {
+      case 'connections':
+        return <ConnectionsComponent />;
+      
+      case 'testimonials':
+        return <TestimonialsComponent />;
 
-    const sectionConfig = getCurrentSectionConfig();
-    
-    // If no section config exists, show under development message
-    if (!sectionConfig) {
-      return (
-        <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-6xl text-slate-700 mb-4 flex justify-center">
-              <FaHandshake />
+       case 'my-feeds':
+      return <MyFeedComponent />;
+      
+      default:
+        // Handle Business Closed form
+        if (showBusinessClosedForm) {
+          const businessClosedConfig = BusinessSectionManager.getSectionConfig('business-closed');
+          return (
+            <DataForm
+              title="Add Business Closed"
+              fields={businessClosedConfig.formConfig.fields}
+              initialData={{
+                referralName: businessClosedSourceItem?.referralName || '',
+                email: businessClosedSourceItem?.email || '',
+                phone: businessClosedSourceItem?.phone || '',
+                ...businessClosedSourceItem
+              }}
+              onSubmit={(formData) => {
+                BusinessSectionManager.addItemToSection('business-closed', formData);
+                setShowBusinessClosedForm(false);
+                setBusinessClosedSourceItem(null);
+                setDataUpdateTrigger(prev => prev + 1);
+              }}
+              onCancel={() => {
+                setShowBusinessClosedForm(false);
+                setBusinessClosedSourceItem(null);
+              }}
+              submitText="Add Business Closed"
+              cancelText="Cancel"
+            />
+          );
+        }
+
+        const sectionConfig = getCurrentSectionConfig();
+        
+        // If no section config exists OR section has no tableConfig, show under development message
+        if (!sectionConfig || !sectionConfig.tableConfig) {
+          return (
+            <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                  <Handshake />
+                </div>
+                <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                  {sectionConfig?.title || section?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Section'}
+                </h2>
+                <p className="text-slate-600">
+                  This section is under development.
+                </p>
+              </div>
             </div>
-            <h2 className="text-2xl font-semibold text-slate-500 mb-2">
-              {selectedSubmenu?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Section'}
-            </h2>
-            <p className="text-slate-600">
-              This section is under development.
-            </p>
-          </div>
-        </div>
-      );
+          );
+        }
+
+        const sectionData = BusinessSectionManager.getSectionData(section);
+
+        if (view === 'form') {
+          return (
+            <DataForm
+              title={selectedItem ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
+              fields={sectionConfig.formConfig.fields}
+              editFields={sectionConfig.formConfig.editFields}
+              initialData={selectedItem || {}}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              submitText={selectedItem ? 'Update' : sectionConfig.formConfig.submitText}
+              cancelText={sectionConfig.formConfig.cancelText}
+              isEdit={!!selectedItem}
+            />
+          );
+        }
+
+        return (
+          <DataTable
+            title={sectionConfig.title}
+            data={sectionData}
+            columns={sectionConfig.tableConfig.columns}
+            filters={sectionConfig.tableConfig.filters}
+            onAdd={handleAddNew}
+            onEdit={handleEdit}
+            onView={handleView}
+            onDelete={handleDelete}
+            addButtonText={sectionConfig.tableConfig.addButtonText}
+            searchPlaceholder={sectionConfig.tableConfig.searchPlaceholder}
+            showActions={sectionConfig.tableConfig.showActions !== false}
+            showExportPrint={sectionConfig.tableConfig.showExportPrint !== false}
+            showAddButton={sectionConfig.tableConfig.showAddButton !== false}
+            clickableRows={sectionConfig.tableConfig.clickableRows || false}
+            key={`${section}-${dataUpdateTrigger}`}
+          />
+        );
     }
-
-    const sectionData = BusinessSectionManager.getSectionData(selectedSubmenu);
-
-    if (currentView === 'form') {
-      return (
-        <DataForm
-          title={selectedItem ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
-          fields={sectionConfig.formConfig.fields}
-          editFields={sectionConfig.formConfig.editFields}
-          initialData={selectedItem || {}}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
-          submitText={selectedItem ? 'Update' : sectionConfig.formConfig.submitText}
-          cancelText={sectionConfig.formConfig.cancelText}
-          isEdit={!!selectedItem}
-        />
-      );
-    }
-
-    return (
-      <DataTable
-        title={sectionConfig.title}
-        data={sectionData}
-        columns={sectionConfig.tableConfig.columns}
-        filters={sectionConfig.tableConfig.filters}
-        onAdd={handleAddNew}
-        onEdit={handleEdit}
-        onView={handleView}
-        onDelete={handleDelete}
-        addButtonText={sectionConfig.tableConfig.addButtonText}
-        searchPlaceholder={sectionConfig.tableConfig.searchPlaceholder}
-        showActions={sectionConfig.tableConfig.showActions !== false}
-        showExportPrint={sectionConfig.tableConfig.showExportPrint !== false}
-        showAddButton={sectionConfig.tableConfig.showAddButton !== false}
-        key={`${selectedSubmenu}-${dataUpdateTrigger}`} // Force re-render when data changes
-      />
-    );
   };
 
   const getWelcomeMessage = () => {
-    if (activeTab === 'business' && selectedSubmenu) {
+    if (tab === 'business' && section) {
       const sectionConfig = getCurrentSectionConfig();
-      return sectionConfig ? `Manage your ${sectionConfig.title.toLowerCase()}.` : "Welcome to your business dashboard.";
+      
+      // Custom messages for specific sections
+      const sectionMessages = {
+        'connections': "Build and manage your professional network connections.",
+        'testimonials': "Showcase and manage testimonials from your network.",
+        'p2p': "Manage peer-to-peer business opportunities.",
+        'meetings': "Schedule and track your business meetings.",
+        'visitors': "Welcome and track your business visitors."
+      };
+      
+      return sectionMessages[section] || 
+             (sectionConfig ? `Manage your ${sectionConfig.title.toLowerCase()}.` : "Welcome to your business dashboard.");
     }
     
     const tabMessages = {
@@ -311,38 +333,130 @@ const Home = () => {
       'settings': "Configure your profile and application preferences."
     };
     
-    return tabMessages[activeTab] || "Welcome to the EKAM Global Network.";
+    return tabMessages[tab] || "Welcome to the EKAM Global Network.";
   };
 
   const renderMainContent = () => {
-    // If a business submenu is selected or business closed form is shown, show the business content
-    if (activeTab === 'business' && (selectedSubmenu || showBusinessClosedForm)) {
+    // If a business section is selected or business closed form is shown, show the business content
+    if (tab === 'business' && (section || showBusinessClosedForm)) {
       return renderBusinessContent();
     }
 
-    // Default welcome screen
-    return (
-      <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl text-slate-700 mb-4 flex justify-center">
-            <FaHandshake />
+    // Handle other main tabs
+    switch (tab) {
+      case 'dashboard':
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <Building />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Dashboard
+              </h2>
+              <p className="text-slate-600">
+                Your comprehensive business dashboard is coming soon.
+              </p>
+            </div>
           </div>
-          <h2 className="text-2xl font-semibold text-slate-500 mb-2">
-            Welcome back, {user?.name || 'User'}!
-          </h2>
-          <p className="text-slate-600 max-w-md mb-4">
-            {user?.chapter && `${user.chapter} Chapter Member • `}
-            {user?.businessCategory && `${user.businessCategory.charAt(0).toUpperCase() + user.businessCategory.slice(1)} • `}
-            {getWelcomeMessage()}
-          </p>
-          <div className="mt-8">
-            <button className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
-              Get Started
-            </button>
+        );
+      
+      case 'professional':
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <GraduationCap />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Professional Development
+              </h2>
+              <p className="text-slate-600">
+                Professional development tools and resources coming soon.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-    );
+        );
+      
+      case 'social':
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <Heart />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Social Network
+              </h2>
+              <p className="text-slate-600">
+                Social networking features coming soon.
+              </p>
+            </div>
+          </div>
+        );
+      
+      case 'groups':
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <Users />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Groups
+              </h2>
+              <p className="text-slate-600">
+                Group management features coming soon.
+              </p>
+            </div>
+          </div>
+        );
+      
+      case 'settings':
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <Settings />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Settings
+              </h2>
+              <p className="text-slate-600">
+                Application settings coming soon.
+              </p>
+            </div>
+          </div>
+        );
+      
+      default:
+        // Default welcome screen
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+                <Handshake />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+                Welcome back, {user?.name || 'User'}!
+              </h2>
+              <p className="text-slate-600 max-w-md mb-4">
+                {user?.chapter && `${user.chapter} Chapter Member • `}
+                {user?.businessCategory && `${user.businessCategory.charAt(0).toUpperCase() + user.businessCategory.slice(1)} • `}
+                {getWelcomeMessage()}
+              </p>
+              <div className="mt-8">
+                <button 
+                  onClick={() => handleTabClick('business')}
+                  className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
@@ -359,7 +473,7 @@ const Home = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <FaBell className="text-gray-600 text-xl cursor-pointer hover:text-orange-500 transition-colors" />
+          <Bell className="text-gray-600 text-xl cursor-pointer hover:text-orange-500 transition-colors" />
           
           <div className="relative user-menu-container">
             <button
@@ -374,7 +488,7 @@ const Home = () => {
               <span className="font-medium text-gray-900">
                 {user?.name || 'User'}
               </span>
-              <FaChevronDown className={`text-gray-600 text-sm transition-transform ${
+              <ChevronDown className={`text-gray-600 text-sm transition-transform ${
                 showUserMenu ? 'rotate-180' : ''
               }`} />
             </button>
@@ -401,11 +515,11 @@ const Home = () => {
 
                 <div className="py-2">
                   <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <FaUser className="text-sm" />
+                    <User className="text-sm w-4 h-4" />
                     <span>View Profile</span>
                   </button>
                   <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <FaCog className="text-sm" />
+                    <Cog className="text-sm w-4 h-4" />
                     <span>Settings</span>
                   </button>
                 </div>
@@ -415,7 +529,7 @@ const Home = () => {
                     onClick={handleLogout}
                     className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
                   >
-                    <FaSignOutAlt className="text-sm" />
+                    <LogOut className="text-sm w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>
@@ -428,20 +542,20 @@ const Home = () => {
       {/* Navigation Bar */}
       <div className="bg-slate-900 relative dropdown-container">
         <div className="flex items-center">
-          {navigationTabs.map((tab) => (
-            <div key={tab.id} className="flex-1">
+          {navigationTabs.map((tabItem) => (
+            <div key={tabItem.id} className="flex-1">
               <button
-                onClick={() => handleTabClick(tab.id)}
+                onClick={() => handleTabClick(tabItem.id)}
                 className={`w-full px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
-                  activeTab === tab.id
+                  tab === tabItem.id
                     ? 'bg-slate-800 text-orange-400 border-b-2 border-orange-500'
                     : 'text-gray-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                <tab.icon className="text-sm" />
-                <span>{tab.label}</span>
-                {tab.id === 'business' && (
-                  <FaChevronDown className={`text-xs transition-transform ${
+                <tabItem.icon className="text-sm w-4 h-4" />
+                <span>{tabItem.label}</span>
+                {tabItem.id === 'business' && (
+                  <ChevronDown className={`text-xs w-3 h-3 transition-transform ${
                     activeDropdown === 'business' ? 'rotate-180' : ''
                   }`} />
                 )}
@@ -459,12 +573,12 @@ const Home = () => {
                 key={item.id}
                 onClick={() => handleSubmenuClick(item.id)}
                 className={`w-full px-4 py-3 flex items-center space-x-3 text-left transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
-                  selectedSubmenu === item.id
+                  section === item.id
                     ? 'bg-orange-500 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-slate-700'
                 }`}
               >
-                <item.icon className="text-sm flex-shrink-0" />
+                <item.icon className="text-sm flex-shrink-0 w-4 h-4" />
                 <span className="text-sm">{item.label}</span>
               </button>
             ))}
@@ -473,16 +587,8 @@ const Home = () => {
       </div>
 
       {/* Main Content Area */}
-      {renderMainContent()}
-
-      {/* Status Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 px-6 py-2">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <div>Active Tab: {activeTab}</div>
-          <div>Selected: {selectedSubmenu ? selectedSubmenu.replace('-', ' ') : 'None'}</div>
-          <div>View: {showBusinessClosedForm ? 'business-closed-form' : currentView}</div>
-          <div>EKAM Global Network v2.0</div>
-        </div>
+      <div className="flex-1">
+        {renderMainContent()}
       </div>
     </div>
   );

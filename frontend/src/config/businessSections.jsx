@@ -580,40 +580,35 @@ export const businessSections = {
         { key: 'startDate', label: 'Start Date', type: 'date' },
         { key: 'endDate', label: 'End Date', type: 'date' }
       ],
-      addButtonText: 'Schedule Meeting',
       searchPlaceholder: 'Search meetings...',
-      showActions: false
+      showActions: false,
+      showExportPrint: false,
+      showAddButton: false,
+      clickableRows: true
     },
-    formConfig: {
-      title: 'Schedule Meeting',
-      fields: [
-        {
-          key: 'meetingDate',
-          label: 'Meeting Date',
-          type: 'date',
-          required: true
-        },
-        {
-          key: 'enteredBy',
-          label: 'Entered by',
-          type: 'select',
-          required: true,
-          placeholder: 'Select member',
-          options: [
-            { value: 'david', label: 'David Smith' },
-            { value: 'phillips', label: 'Phillips Johnson' },
-            { value: 'mike', label: 'Mike Williams' }
-          ]
-        },
-        {
-          key: 'enteredDate',
-          label: 'Entered date',
-          type: 'date',
-          required: true
-        }
+    detailsConfig: {
+      title: 'Meeting Details',
+      columns: [
+        { key: 'firstName', label: 'First Name', sortable: true },
+        { key: 'lastName', label: 'Last Name', sortable: true },
+        { key: 'palms', label: 'PALMS', sortable: true },
+        { key: 'rgi', label: 'RGI', sortable: true },
+        { key: 'rgo', label: 'RGO', sortable: true },
+        { key: 'pri', label: 'PRI', sortable: true },
+        { key: 'rro', label: 'RRO', sortable: true },
+        { key: 'visitors', label: 'Visitors', sortable: true },
+        { key: 'oneToOne', label: '121', sortable: true },
+        { key: 'tqGiven', label: 'TQ Given', sortable: true },
+        { key: 'testimonials', label: 'Testimonials', sortable: true }
       ],
-      submitText: 'Submit',
-      cancelText: 'Cancel'
+      filters: [
+        { key: 'startDate', label: 'Start Date', type: 'date' },
+        { key: 'endDate', label: 'End Date', type: 'date' }
+      ],
+      searchPlaceholder: 'Search meeting details...',
+      showActions: false,
+      showExportPrint: false,
+      showAddButton: false
     },
     data: [
       {
@@ -621,234 +616,181 @@ export const businessSections = {
         meetingDate: '2025-09-25',
         enteredBy: 'David Smith',
         enteredDate: '2025-09-20',
-        status: 'Scheduled'
+        status: 'Scheduled',
+        details: [
+          {
+            id: 1,
+            firstName: 'John',
+            lastName: 'Anderson',
+            palms: '5',
+            rgi: '3',
+            rgo: '2',
+            pri: '4',
+            rro: '1',
+            visitors: '2',
+            oneToOne: '3',
+            tqGiven: '7',
+            testimonials: '2'
+          },
+          {
+            id: 2,
+            firstName: 'Sarah',
+            lastName: 'Wilson',
+            palms: '8',
+            rgi: '6',
+            rgo: '4',
+            pri: '3',
+            rro: '2',
+            visitors: '1',
+            oneToOne: '5',
+            tqGiven: '9',
+            testimonials: '3'
+          },
+          {
+            id: 3,
+            firstName: 'Michael',
+            lastName: 'Chen',
+            palms: '12',
+            rgi: '8',
+            rgo: '6',
+            pri: '7',
+            rro: '3',
+            visitors: '4',
+            oneToOne: '8',
+            tqGiven: '15',
+            testimonials: '5'
+          }
+        ]
       },
       {
         id: 2,
         meetingDate: '2025-09-18',
         enteredBy: 'Phillips Johnson',
         enteredDate: '2025-09-15',
-        status: 'Completed'
+        status: 'Completed',
+        details: [
+          {
+            id: 1,
+            firstName: 'Emily',
+            lastName: 'Rodriguez',
+            palms: '6',
+            rgi: '4',
+            rgo: '3',
+            pri: '2',
+            rro: '1',
+            visitors: '1',
+            oneToOne: '4',
+            tqGiven: '8',
+            testimonials: '2'
+          },
+          {
+            id: 2,
+            firstName: 'David',
+            lastName: 'Thompson',
+            palms: '10',
+            rgi: '7',
+            rgo: '5',
+            pri: '6',
+            rro: '4',
+            visitors: '3',
+            oneToOne: '6',
+            tqGiven: '12',
+            testimonials: '4'
+          }
+        ]
       },
       {
         id: 3,
         meetingDate: '2025-09-30',
         enteredBy: 'Mike Williams',
         enteredDate: '2025-09-22',
-        status: 'Scheduled'
+        status: 'Scheduled',
+        details: [
+          {
+            id: 1,
+            firstName: 'Alice',
+            lastName: 'Johnson',
+            palms: '4',
+            rgi: '2',
+            rgo: '1',
+            pri: '3',
+            rro: '0',
+            visitors: '1',
+            oneToOne: '2',
+            tqGiven: '5',
+            testimonials: '1'
+          },
+          {
+            id: 2,
+            firstName: 'Robert',
+            lastName: 'Brown',
+            palms: '9',
+            rgi: '6',
+            rgo: '4',
+            pri: '5',
+            rro: '3',
+            visitors: '2',
+            oneToOne: '7',
+            tqGiven: '11',
+            testimonials: '3'
+          },
+          {
+            id: 3,
+            firstName: 'Lisa',
+            lastName: 'Davis',
+            palms: '7',
+            rgi: '5',
+            rgo: '3',
+            pri: '4',
+            rro: '2',
+            visitors: '1',
+            oneToOne: '5',
+            tqGiven: '9',
+            testimonials: '2'
+          }
+        ]
       },
       {
         id: 4,
         meetingDate: '2025-09-12',
         enteredBy: 'David Smith',
         enteredDate: '2025-09-10',
-        status: 'Cancelled'
+        status: 'Cancelled',
+        details: []
       },
       {
         id: 5,
         meetingDate: '2025-09-28',
         enteredBy: 'Phillips Johnson',
         enteredDate: '2025-09-23',
-        status: 'Scheduled'
+        status: 'Scheduled',
+        details: [
+          {
+            id: 1,
+            firstName: 'Mark',
+            lastName: 'Wilson',
+            palms: '11',
+            rgi: '8',
+            rgo: '6',
+            pri: '7',
+            rro: '4',
+            visitors: '3',
+            oneToOne: '9',
+            tqGiven: '14',
+            testimonials: '4'
+          }
+        ]
       }
     ]
   },
 
   'connections': {
-    title: 'Connections',
-    tableConfig: {
-      columns: [
-        { key: 'name', label: 'Name', sortable: true },
-        { key: 'email', label: 'Email', sortable: true },
-        { key: 'phone', label: 'Phone', sortable: true },
-        { key: 'company', label: 'Company', sortable: true },
-        { key: 'connectionDate', label: 'Connection Date', sortable: true },
-        { 
-          key: 'status', 
-          label: 'Status', 
-          sortable: true,
-          render: (value) => (
-            <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Active' ? 'bg-green-600 text-white' : 
-              value === 'Inactive' ? 'bg-red-600 text-white' : 
-              'bg-gray-600 text-white'
-            }`}>
-              {value}
-            </span>
-          )
-        }
-      ],
-      filters: [
-        { key: 'startDate', label: 'Start Date', type: 'date' },
-        { key: 'endDate', label: 'End Date', type: 'date' }
-      ],
-      addButtonText: 'Add Connection',
-      searchPlaceholder: 'Search connections...'
-    },
-    formConfig: {
-      title: 'Add Connection',
-      fields: [
-        {
-          key: 'name',
-          label: 'Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter name'
-        },
-        {
-          key: 'email',
-          label: 'Email',
-          type: 'email',
-          required: true,
-          placeholder: 'Enter email'
-        },
-        {
-          key: 'phone',
-          label: 'Phone',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter phone'
-        },
-        {
-          key: 'company',
-          label: 'Company',
-          type: 'text',
-          required: false,
-          placeholder: 'Enter company'
-        },
-        {
-          key: 'connectionDate',
-          label: 'Connection Date',
-          type: 'date',
-          required: true
-        }
-      ],
-      submitText: 'Submit',
-      cancelText: 'Cancel'
-    },
-    data: [
-      {
-        id: 1,
-        name: 'Alice Johnson',
-        email: 'alice@example.com',
-        phone: '+1-555-1111',
-        company: 'Tech Corp',
-        connectionDate: '2025-09-15',
-        status: 'Active'
-      },
-      {
-        id: 2,
-        name: 'Bob Smith',
-        email: 'bob@company.com',
-        phone: '+1-555-2222',
-        company: 'Marketing Inc',
-        connectionDate: '2025-09-18',
-        status: 'Active'
-      }
-    ]
-  },
+  title: 'Connections'
+},
 
-  'testimonials': {
-    title: 'Testimonials',
-    tableConfig: {
-      columns: [
-        { key: 'clientName', label: 'Client Name', sortable: true },
-        { key: 'company', label: 'Company', sortable: true },
-        { key: 'testimonial', label: 'Testimonial', sortable: false },
-        { key: 'rating', label: 'Rating', sortable: true },
-        { key: 'date', label: 'Date', sortable: true },
-        { 
-          key: 'status', 
-          label: 'Status', 
-          sortable: true,
-          render: (value) => (
-            <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Published' ? 'bg-green-600 text-white' : 
-              value === 'Draft' ? 'bg-yellow-600 text-white' : 
-              'bg-gray-600 text-white'
-            }`}>
-              {value}
-            </span>
-          )
-        }
-      ],
-      filters: [
-        { key: 'startDate', label: 'Start Date', type: 'date' },
-        { key: 'endDate', label: 'End Date', type: 'date' }
-      ],
-      addButtonText: 'Add Testimonial',
-      searchPlaceholder: 'Search testimonials...'
-    },
-    formConfig: {
-      title: 'Add Testimonial',
-      fields: [
-        {
-          key: 'clientName',
-          label: 'Client Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter client name'
-        },
-        {
-          key: 'company',
-          label: 'Company',
-          type: 'text',
-          required: false,
-          placeholder: 'Enter company'
-        },
-        {
-          key: 'testimonial',
-          label: 'Testimonial',
-          type: 'textarea',
-          required: true,
-          placeholder: 'Enter testimonial',
-          rows: 4
-        },
-        {
-          key: 'rating',
-          label: 'Rating',
-          type: 'select',
-          required: true,
-          placeholder: 'Select rating',
-          options: [
-            { value: '5', label: '5 Stars' },
-            { value: '4', label: '4 Stars' },
-            { value: '3', label: '3 Stars' },
-            { value: '2', label: '2 Stars' },
-            { value: '1', label: '1 Star' }
-          ]
-        },
-        {
-          key: 'date',
-          label: 'Date',
-          type: 'date',
-          required: true
-        }
-      ],
-      submitText: 'Submit',
-      cancelText: 'Cancel'
-    },
-    data: [
-      {
-        id: 1,
-        clientName: 'John Doe',
-        company: 'ABC Corp',
-        testimonial: 'Excellent service and professional approach. Highly recommended!',
-        rating: '5',
-        date: '2025-09-15',
-        status: 'Published'
-      },
-      {
-        id: 2,
-        clientName: 'Jane Smith',
-        company: 'XYZ Ltd',
-        testimonial: 'Great experience working with them. Very satisfied with the results.',
-        rating: '4',
-        date: '2025-09-18',
-        status: 'Published'
-      }
-    ]
-  },
+'testimonials': {
+  title: 'Testimonials'
+},
 
   'upcoming-events': {
     title: 'Upcoming Events',

@@ -12,6 +12,9 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/home/:tab" element={<Home />} />
+        <Route path="/home/:tab/:section" element={<Home />} />
+        <Route path="/home/:tab/:section/:view" element={<Home />} />
       </Routes>
     </Router>
   );
