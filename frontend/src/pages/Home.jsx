@@ -27,10 +27,15 @@ import {
 } from '../config/BusinessData';
 
 const Home = () => {
-  // Get URL parameters
+  // Get URL parameters - ADD DEBUG LOGGING
   const { tab = 'dashboard', section, view = 'table' } = useParams();
   const navigate = useNavigate();
   
+  // Debug: Log route parameters
+  useEffect(() => {
+    console.log('Route params changed:', { tab, section, view });
+  }, [tab, section, view]);
+
   // UI state
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [user, setUser] = useState(null);
@@ -74,17 +79,26 @@ const Home = () => {
     }
   }, [navigate]);
 
+  // Reset selected item when section changes
+  useEffect(() => {
+    setSelectedItem(null);
+    setShowBusinessClosedForm(false);
+    setBusinessClosedSourceItem(null);
+  }, [section]);
+
   // Add global handler for business closed
   useEffect(() => {
     window.handleAddBusinessClosed = (sourceItem) => {
       setBusinessClosedSourceItem(sourceItem);
       setShowBusinessClosedForm(true);
+      // Navigate to business-closed section to ensure proper routing
+      navigate('/home/business/business-closed');
     };
     
     return () => {
       delete window.handleAddBusinessClosed;
     };
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -164,6 +178,8 @@ const Home = () => {
         const sectionData = getSectionData(section);
         await sectionData.deleteItem(item.id);
         console.log('Item deleted successfully');
+        // Refresh data
+        setDataUpdateTrigger(prev => prev + 1);
       } catch (error) {
         console.error('Error deleting item:', error);
         alert('Error deleting item. Please try again.');
@@ -185,6 +201,8 @@ const Home = () => {
       
       navigate(`/home/business/${section}`);
       setSelectedItem(null);
+      // Refresh data
+      setDataUpdateTrigger(prev => prev + 1);
       console.log('Form submitted successfully');
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -240,6 +258,11 @@ const Home = () => {
       default:
         return { data: [], loading: false, error: null };
     }
+  };
+
+  // FIXED: Improved form detection logic
+  const shouldShowForm = () => {
+    return view === 'form' || showBusinessClosedForm;
   };
 
   const renderDataSection = (sectionId) => {
@@ -316,136 +339,132 @@ const Home = () => {
     );
   };
 
+  // FIXED: Simplified and improved business content rendering
   const renderBusinessContent = () => {
-    // Handle specific business sections with custom components
+    // Handle specific business sections with custom components first
     switch (section) {
       case 'connections':
         return <ConnectionsComponent />;
-
       case 'testimonials':
         return <TestimonialsComponent />;
-
       case 'my-feeds':
         return <MyFeedComponent userId={user?.id} />;
-
-      case 'p2p':
-        return renderDataSection('p2p');
-
-      case 'business-opportunity-received':
-        return renderDataSection('business-opportunity-received');
-
-      case 'business-opportunity-given':
-        return renderDataSection('business-opportunity-given');
-
-      case 'business-closed':
-        return renderDataSection('business-closed');
-
-      case 'meetings':
-        return renderDataSection('meetings');
-
-      case 'visitors':
-        return renderDataSection('visitors');
-
-      case 'one-to-many':
-        return renderDataSection('one-to-many');
-
-      case 'upcoming-events':
-        return renderDataSection('upcoming-events');
-
-      default:
-        // Handle Business Closed form
-        if (showBusinessClosedForm) {
-          const businessClosedConfig = BusinessSectionManager.getSectionConfig('business-closed');
-          return (
-            <DataForm
-              title="Add Business Closed"
-              fields={businessClosedConfig.formConfig.fields}
-              initialData={{
-                referralName: businessClosedSourceItem?.referralName || '',
-                email: businessClosedSourceItem?.email || '',
-                phone: businessClosedSourceItem?.phone || '',
-                ...businessClosedSourceItem
-              }}
-              onSubmit={async (formData) => {
-                try {
-                  await businessClosedData.addItem(formData);
-                  setShowBusinessClosedForm(false);
-                  setBusinessClosedSourceItem(null);
-                  console.log('Business Closed added successfully');
-                } catch (error) {
-                  console.error('Error adding Business Closed:', error);
-                  alert('Error adding Business Closed. Please try again.');
-                }
-              }}
-              onCancel={() => {
-                setShowBusinessClosedForm(false);
-                setBusinessClosedSourceItem(null);
-              }}
-              submitText="Add Business Closed"
-              cancelText="Cancel"
-            />
-          );
-        }
-
-        const sectionConfig = getCurrentSectionConfig();
-
-        // If no section config exists OR section has no tableConfig, show under development message
-        if (!sectionConfig || !sectionConfig.tableConfig) {
-          return (
-            <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl text-slate-700 mb-4 flex justify-center">
-                  <Handshake />
-                </div>
-                <h2 className="text-2xl font-semibold text-slate-500 mb-2">
-                  {sectionConfig?.title || section?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Section'}
-                </h2>
-                <p className="text-slate-600">
-                  This section is under development.
-                </p>
-              </div>
-            </div>
-          );
-        }
-
-        const sectionData = BusinessSectionManager.getSectionData(section);
-
-        if (view === 'form') {
-          return (
-            <DataForm
-              title={selectedItem ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
-              fields={sectionConfig.formConfig.fields}
-              editFields={sectionConfig.formConfig.editFields}
-              initialData={selectedItem || {}}
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-              submitText={selectedItem ? 'Update' : sectionConfig.formConfig.submitText}
-              cancelText={sectionConfig.formConfig.cancelText}
-              isEdit={!!selectedItem}
-            />
-          );
-        }
-
-        return (
-          <DataTable
-            title={sectionConfig.title}
-            data={sectionData}
-            columns={sectionConfig.tableConfig.columns}
-            filters={sectionConfig.tableConfig.filters}
-            onAdd={handleAddNew}
-            onEdit={handleEdit}
-            onView={handleView}
-            onDelete={handleDelete}
-            addButtonText={sectionConfig.tableConfig.addButtonText}
-            searchPlaceholder={sectionConfig.tableConfig.searchPlaceholder}
-            showActions={sectionConfig.tableConfig.showActions !== false}
-            showExportPrint={sectionConfig.tableConfig.showExportPrint !== false}
-            showAddButton={sectionConfig.tableConfig.showAddButton !== false}
-            clickableRows={sectionConfig.tableConfig.clickableRows || false}
-            key={`${section}-${dataUpdateTrigger}`}
-          />
-        );
     }
+
+    // Handle Business Closed form (global handler)
+    if (showBusinessClosedForm && section === 'business-closed') {
+      const businessClosedConfig = BusinessSectionManager.getSectionConfig('business-closed');
+      return (
+        <DataForm
+          title="Add Business Closed"
+          fields={businessClosedConfig.formConfig.fields}
+          initialData={{
+            referralName: businessClosedSourceItem?.referralName || '',
+            email: businessClosedSourceItem?.email || '',
+            phone: businessClosedSourceItem?.phone || '',
+            ...businessClosedSourceItem
+          }}
+          onSubmit={async (formData) => {
+            try {
+              await businessClosedData.addItem(formData);
+              setShowBusinessClosedForm(false);
+              setBusinessClosedSourceItem(null);
+              console.log('Business Closed added successfully');
+              setDataUpdateTrigger(prev => prev + 1);
+            } catch (error) {
+              console.error('Error adding Business Closed:', error);
+              alert('Error adding Business Closed. Please try again.');
+            }
+          }}
+          onCancel={() => {
+            setShowBusinessClosedForm(false);
+            setBusinessClosedSourceItem(null);
+            navigate(`/home/business/${section}`);
+          }}
+          submitText="Add Business Closed"
+          cancelText="Cancel"
+        />
+      );
+    }
+
+    // Handle regular form views (URL-based)
+    if (view === 'form' && section) {
+      const sectionConfig = getCurrentSectionConfig();
+      
+      if (!sectionConfig || !sectionConfig.formConfig) {
+        return (
+          <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl text-red-500 mb-4 flex justify-center">
+                <Handshake />
+              </div>
+              <h2 className="text-2xl font-semibold text-red-500 mb-2">
+                Form Configuration Error
+              </h2>
+              <p className="text-slate-400">
+                Form configuration not found for {section}.
+              </p>
+              <button 
+                onClick={() => navigate(`/home/business/${section}`)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+              >
+                Back to Table
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <DataForm
+          title={selectedItem ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
+          fields={sectionConfig.formConfig.fields}
+          editFields={sectionConfig.formConfig.editFields}
+          initialData={selectedItem || {}}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          submitText={selectedItem ? 'Update' : sectionConfig.formConfig.submitText}
+          cancelText={sectionConfig.formConfig.cancelText}
+          isEdit={!!selectedItem}
+        />
+      );
+    }
+
+    // Handle data table views for specific sections
+    const dataSections = [
+      'p2p', 'business-opportunity-received', 'business-opportunity-given', 
+      'business-closed', 'meetings', 'visitors', 'one-to-many', 'upcoming-events'
+    ];
+
+    if (section && dataSections.includes(section)) {
+      return renderDataSection(section);
+    }
+
+    // Default fallback for unsupported sections
+    const sectionConfig = getCurrentSectionConfig();
+    return (
+      <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+            <Handshake />
+          </div>
+          <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+            {sectionConfig?.title || section?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Section'}
+          </h2>
+          <p className="text-slate-600">
+            {view === 'form' ? 'Form view not available for this section.' : 'This section is under development.'}
+          </p>
+          {view === 'form' && (
+            <button 
+              onClick={() => navigate(`/home/business/${section}`)}
+              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+            >
+              Back to Table
+            </button>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const getWelcomeMessage = () => {
@@ -739,8 +758,8 @@ const Home = () => {
         )}
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1">
+      {/* Main Content Area - FIXED: Ensure proper height and rendering */}
+      <div className="flex-1 min-h-[calc(100vh-140px)]">
         {renderMainContent()}
       </div>
     </div>
