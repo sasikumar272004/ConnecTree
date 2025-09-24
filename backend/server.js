@@ -41,6 +41,7 @@ app.use(hpp());
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/data', require('./routes/dataRoutes'));
 
 // Basic route
 app.get('/', (req, res) => {

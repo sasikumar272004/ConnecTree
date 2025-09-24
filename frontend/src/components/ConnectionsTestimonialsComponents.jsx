@@ -1,7 +1,7 @@
 // components/ConnectionsTestimonialsComponents.js
 // This file contains all the UI components and layouts
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 // State persistence utilities
 const saveStateToLocalStorage = (key, value) => {
@@ -23,7 +23,7 @@ const getStateFromLocalStorage = (key, defaultValue) => {
 };
 
 import { Search, Users, UserPlus, UserCheck, MessageCircle, Eye, Quote } from 'lucide-react';
-import { connectionsData, testimonialsData, connectionsService, testimonialsService } from '../config/ConnectionsTestimonialsData';
+import { useConnectionsData, useTestimonialsData } from '../config/ConnectionsTestimonialsData';
 
 // Avatar component with fallback
 const Avatar = ({ src, name, size = 'md' }) => {
@@ -252,9 +252,47 @@ export const ConnectionsComponent = () => {
   const [activeMetric, setActiveMetric] = useState(() =>
     getStateFromLocalStorage('connections_activeMetric', 'myConnections')
   );
-  
-  const filteredConnections = connectionsService.getConnectionsByType(activeMetric, searchTerm);
-  const stats = connectionsService.getStats();
+
+  const { connections, loading, error } = useConnectionsData();
+
+  // Filter connections based on active metric and search term
+  const filteredConnections = useMemo(() => {
+    let filtered = connections;
+
+    // Filter by type
+    switch(activeMetric) {
+      case 'myConnections':
+        filtered = connections.filter(conn => conn.status === 'connected');
+        break;
+      case 'sentRequests':
+        filtered = connections.filter(conn => conn.status === 'pending-sent');
+        break;
+      case 'receivedRequests':
+        filtered = connections.filter(conn => conn.status === 'pending-received');
+        break;
+      default:
+        filtered = connections;
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(conn =>
+        conn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conn.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conn.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conn.location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [connections, activeMetric, searchTerm]);
+
+  // Calculate stats
+  const stats = useMemo(() => ({
+    myConnections: connections.filter(conn => conn.status === 'connected').length,
+    sentRequests: connections.filter(conn => conn.status === 'pending-sent').length,
+    receivedRequests: connections.filter(conn => conn.status === 'pending-received').length
+  }), [connections]);
 
   // Save states when they change
   const handleSearchChange = (value) => {
@@ -330,14 +368,9 @@ export const ConnectionsComponent = () => {
         />
       </div>
 
-      <ResultsCount 
+      <ResultsCount
         current={filteredConnections.length}
-        total={
-          activeMetric === 'myConnections' ? connectionsData.connections.length :
-          activeMetric === 'sentRequests' ? connectionsData.sentRequestsList.length :
-          activeMetric === 'receivedRequests' ? connectionsData.receivedRequestsList.length :
-          connectionsData.connections.length
-        }
+        total={connections.length}
         itemType="connections"
       />
 
@@ -371,9 +404,47 @@ export const TestimonialsComponent = () => {
   const [activeMetric, setActiveMetric] = useState(() =>
     getStateFromLocalStorage('testimonials_activeMetric', 'testimonialsReceived')
   );
-  
-  const filteredTestimonials = testimonialsService.getTestimonialsByType(activeMetric, searchTerm);
-  const stats = testimonialsService.getStats();
+
+  const { testimonials, loading, error } = useTestimonialsData();
+
+  // Filter testimonials based on active metric and search term
+  const filteredTestimonials = useMemo(() => {
+    let filtered = testimonials;
+
+    // Filter by type
+    switch(activeMetric) {
+      case 'testimonialsReceived':
+        filtered = testimonials.filter(test => test.type === 'received');
+        break;
+      case 'testimonialsGiven':
+        filtered = testimonials.filter(test => test.type === 'given');
+        break;
+      case 'testimonialsRequests':
+        filtered = testimonials.filter(test => test.type === 'request');
+        break;
+      default:
+        filtered = testimonials;
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(test =>
+        test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        test.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        test.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        test.testimonial.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [testimonials, activeMetric, searchTerm]);
+
+  // Calculate stats
+  const stats = useMemo(() => ({
+    testimonialsReceived: testimonials.filter(test => test.type === 'received').length,
+    testimonialsGiven: testimonials.filter(test => test.type === 'given').length,
+    testimonialsRequests: testimonials.filter(test => test.type === 'request').length
+  }), [testimonials]);
 
   // Save states when they change
   const handleSearchChange = (value) => {
@@ -395,11 +466,11 @@ export const TestimonialsComponent = () => {
   };
 
   const handleShare = (testimonialId) => {
-    testimonialsService.shareTestimonial(testimonialId, 'social');
+    console.log('Sharing testimonial:', testimonialId);
   };
 
   const handleThank = (testimonialId) => {
-    testimonialsService.thankForTestimonial(testimonialId);
+    console.log('Thanking for testimonial:', testimonialId);
   };
 
   return (
@@ -450,17 +521,17 @@ export const TestimonialsComponent = () => {
         />
       </div>
 
-      <ResultsCount 
+      <ResultsCount
         current={filteredTestimonials.length}
-        total={testimonialsData.testimonials.length}
+        total={testimonials.length}
         itemType={`testimonial${filteredTestimonials.length !== 1 ? 's' : ''}`}
       />
 
       {/* Testimonials Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredTestimonials.map((testimonial) => (
+        {filteredTestimonials.map((testimonial, index) => (
           <TestimonialCard
-            key={testimonial.id}
+            key={`${testimonial.id}-${index}`}
             testimonial={testimonial}
             onShare={handleShare}
             onThank={handleThank}

@@ -14,6 +14,17 @@ import { businessSections, BusinessSectionManager } from '../config/businessSect
 import { ConnectionsComponent, TestimonialsComponent } from '../components/ConnectionsTestimonialsComponents';
 // Add this import at the top with your other imports
 import MyFeedComponent from '../components/MyFeed'; // Adjust path as needed
+import {
+  useP2PData,
+  useBusinessOpportunitiesReceivedData,
+  useBusinessOpportunitiesGivenData,
+  useBusinessClosedData,
+  useMeetingsData,
+  useVisitorsData,
+  useMyFeedsData,
+  useOneToManyData,
+  useUpcomingEventsData
+} from '../config/BusinessData';
 
 const Home = () => {
   // Get URL parameters
@@ -28,6 +39,17 @@ const Home = () => {
   const [dataUpdateTrigger, setDataUpdateTrigger] = useState(0);
   const [showBusinessClosedForm, setShowBusinessClosedForm] = useState(false);
   const [businessClosedSourceItem, setBusinessClosedSourceItem] = useState(null);
+
+  // *** CRITICAL FIX: Call ALL hooks at the top level, always in the same order ***
+  const p2pData = useP2PData();
+  const businessOpportunitiesReceivedData = useBusinessOpportunitiesReceivedData();
+  const businessOpportunitiesGivenData = useBusinessOpportunitiesGivenData();
+  const businessClosedData = useBusinessClosedData();
+  const meetingsData = useMeetingsData();
+  const visitorsData = useVisitorsData();
+  const myFeedsData = useMyFeedsData();
+  const oneToManyData = useOneToManyData();
+  const upcomingEventsData = useUpcomingEventsData();
 
   // Load user data on component mount
   useEffect(() => {
@@ -136,34 +158,38 @@ const Home = () => {
     console.log('View item:', item);
   };
 
-  const handleDelete = (item) => {
+  const handleDelete = async (item) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      const currentData = BusinessSectionManager.getSectionData(section);
-      const updatedData = currentData.filter(dataItem => dataItem.id !== item.id);
-      BusinessSectionManager.updateSectionData(section, updatedData);
-      // Force re-render by updating trigger
-      setDataUpdateTrigger(prev => prev + 1);
+      try {
+        const sectionData = getSectionData(section);
+        await sectionData.deleteItem(item.id);
+        console.log('Item deleted successfully');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Error deleting item. Please try again.');
+      }
     }
   };
 
-  const handleFormSubmit = (formData) => {
-    if (selectedItem) {
-      // Update existing item
-      const currentData = BusinessSectionManager.getSectionData(section);
-      const updatedData = currentData.map(item => 
-        item.id === selectedItem.id ? { ...item, ...formData } : item
-      );
-      BusinessSectionManager.updateSectionData(section, updatedData);
-    } else {
-      // Add new item
-      BusinessSectionManager.addItemToSection(section, formData);
+  const handleFormSubmit = async (formData) => {
+    try {
+      const sectionData = getSectionData(section);
+      
+      if (selectedItem) {
+        // Update existing item using API hook
+        await sectionData.updateItem(selectedItem.id, formData);
+      } else {
+        // Add new item using API hook
+        await sectionData.addItem(formData);
+      }
+      
+      navigate(`/home/business/${section}`);
+      setSelectedItem(null);
+      console.log('Form submitted successfully');
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Error submitting form. Please try again.');
     }
-    
-    navigate(`/home/business/${section}`);
-    setSelectedItem(null);
-    // Force re-render by updating trigger
-    setDataUpdateTrigger(prev => prev + 1);
-    console.log('Form submitted successfully');
   };
 
   const handleFormCancel = () => {
@@ -186,22 +212,108 @@ const Home = () => {
     };
   }, []);
 
-  // Show loading if user data is not loaded yet
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Get current section configuration
   const getCurrentSectionConfig = () => {
     if (!section) return null;
     return BusinessSectionManager.getSectionConfig(section);
+  };
+
+  // Helper function to get the correct data based on section
+  const getSectionData = (sectionId) => {
+    switch (sectionId) {
+      case 'p2p':
+        return p2pData;
+      case 'business-opportunity-received':
+        return businessOpportunitiesReceivedData;
+      case 'business-opportunity-given':
+        return businessOpportunitiesGivenData;
+      case 'business-closed':
+        return businessClosedData;
+      case 'meetings':
+        return meetingsData;
+      case 'visitors':
+        return visitorsData;
+      case 'one-to-many':
+        return oneToManyData;
+      case 'upcoming-events':
+        return upcomingEventsData;
+      default:
+        return { data: [], loading: false, error: null };
+    }
+  };
+
+  const renderDataSection = (sectionId) => {
+    const { data, loading, error } = getSectionData(sectionId);
+    const sectionConfig = getCurrentSectionConfig();
+
+    if (loading) {
+      return (
+        <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-slate-400">Loading {sectionConfig?.title || sectionId}...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl text-red-500 mb-4 flex justify-center">
+              <Handshake />
+            </div>
+            <h2 className="text-2xl font-semibold text-red-500 mb-2">
+              Error Loading Data
+            </h2>
+            <p className="text-slate-400">
+              {error}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // If we have data and section config, render the DataTable
+    if (sectionConfig && sectionConfig.tableConfig) {
+      return (
+        <DataTable
+          title={sectionConfig.title}
+          data={data || []}
+          columns={sectionConfig.tableConfig.columns}
+          filters={sectionConfig.tableConfig.filters}
+          onAdd={handleAddNew}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+          addButtonText={sectionConfig.tableConfig.addButtonText}
+          searchPlaceholder={sectionConfig.tableConfig.searchPlaceholder}
+          showActions={sectionConfig.tableConfig.showActions !== false}
+          showExportPrint={sectionConfig.tableConfig.showExportPrint !== false}
+          showAddButton={sectionConfig.tableConfig.showAddButton !== false}
+          clickableRows={sectionConfig.tableConfig.clickableRows || false}
+          key={`${sectionId}-${dataUpdateTrigger}`}
+        />
+      );
+    }
+
+    // Fallback if no section config
+    return (
+      <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl text-slate-700 mb-4 flex justify-center">
+            <Handshake />
+          </div>
+          <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+            {sectionConfig?.title || sectionId?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Section'}
+          </h2>
+          <p className="text-slate-600">
+            This section is under development.
+          </p>
+        </div>
+      </div>
+    );
   };
 
   const renderBusinessContent = () => {
@@ -209,13 +321,37 @@ const Home = () => {
     switch (section) {
       case 'connections':
         return <ConnectionsComponent />;
-      
+
       case 'testimonials':
         return <TestimonialsComponent />;
 
-       case 'my-feeds':
-      return <MyFeedComponent />;
-      
+      case 'my-feeds':
+        return <MyFeedComponent userId={user?.id} />;
+
+      case 'p2p':
+        return renderDataSection('p2p');
+
+      case 'business-opportunity-received':
+        return renderDataSection('business-opportunity-received');
+
+      case 'business-opportunity-given':
+        return renderDataSection('business-opportunity-given');
+
+      case 'business-closed':
+        return renderDataSection('business-closed');
+
+      case 'meetings':
+        return renderDataSection('meetings');
+
+      case 'visitors':
+        return renderDataSection('visitors');
+
+      case 'one-to-many':
+        return renderDataSection('one-to-many');
+
+      case 'upcoming-events':
+        return renderDataSection('upcoming-events');
+
       default:
         // Handle Business Closed form
         if (showBusinessClosedForm) {
@@ -230,11 +366,16 @@ const Home = () => {
                 phone: businessClosedSourceItem?.phone || '',
                 ...businessClosedSourceItem
               }}
-              onSubmit={(formData) => {
-                BusinessSectionManager.addItemToSection('business-closed', formData);
-                setShowBusinessClosedForm(false);
-                setBusinessClosedSourceItem(null);
-                setDataUpdateTrigger(prev => prev + 1);
+              onSubmit={async (formData) => {
+                try {
+                  await businessClosedData.addItem(formData);
+                  setShowBusinessClosedForm(false);
+                  setBusinessClosedSourceItem(null);
+                  console.log('Business Closed added successfully');
+                } catch (error) {
+                  console.error('Error adding Business Closed:', error);
+                  alert('Error adding Business Closed. Please try again.');
+                }
               }}
               onCancel={() => {
                 setShowBusinessClosedForm(false);
@@ -247,7 +388,7 @@ const Home = () => {
         }
 
         const sectionConfig = getCurrentSectionConfig();
-        
+
         // If no section config exists OR section has no tableConfig, show under development message
         if (!sectionConfig || !sectionConfig.tableConfig) {
           return (
@@ -385,7 +526,7 @@ const Home = () => {
               <div className="text-6xl text-slate-700 mb-4 flex justify-center">
                 <Heart />
               </div>
-              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
+              <h2 className="text-2xl font-semibent text-slate-500 mb-2">
                 Social Network
               </h2>
               <p className="text-slate-600">
@@ -458,6 +599,18 @@ const Home = () => {
         );
     }
   };
+
+  // Show loading if user data is not loaded yet
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">

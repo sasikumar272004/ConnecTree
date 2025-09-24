@@ -1,5 +1,176 @@
 // config/businessSections.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+// API base URL
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
+
+// API service functions
+export const businessDataService = {
+  // Generic function to fetch data from API
+  fetchData: async (sectionId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/data/${sectionId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error(`Error fetching ${sectionId} data:`, error);
+      return [];
+    }
+  },
+
+  // Generic function to create data
+  createData: async (sectionId, data) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/data/${sectionId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error(`Error creating ${sectionId} data:`, error);
+      throw error;
+    }
+  },
+
+  // Generic function to update data
+  updateData: async (sectionId, id, data) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/data/${sectionId}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error(`Error updating ${sectionId} data:`, error);
+      throw error;
+    }
+  },
+
+  // Generic function to delete data
+  deleteData: async (sectionId, id) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/data/${sectionId}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`Error deleting ${sectionId} data:`, error);
+      throw error;
+    }
+  }
+};
+
+// React hooks for business data management
+export const useBusinessData = (sectionId) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const sectionData = await businessDataService.fetchData(sectionId);
+        setData(sectionData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sectionId) {
+      fetchData();
+    }
+  }, [sectionId]);
+
+  const addItem = async (itemData) => {
+    try {
+      const newItem = await businessDataService.createData(sectionId, itemData);
+      setData(prev => [...prev, newItem]);
+      return newItem;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const updateItem = async (id, updateData) => {
+    try {
+      const updatedItem = await businessDataService.updateData(sectionId, id, updateData);
+      setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      return updatedItem;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const deleteItem = async (id) => {
+    try {
+      await businessDataService.deleteData(sectionId, id);
+      setData(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    addItem,
+    updateItem,
+    deleteItem
+  };
+};
 
 export const businessSections = {
   'p2p': {
@@ -86,26 +257,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        date: '10/08/2025',
-        meetWith: 'David',
-        initiatedBy: 'Mike',
-        location: 'Office',
-        topics: 'Discussed about each other\'s businesses and future collaboration...',
-        status: 'Completed'
-      },
-      {
-        id: 2,
-        date: '19/08/2025',
-        meetWith: 'Phillips',
-        initiatedBy: 'John',
-        location: 'Cafe',
-        topics: 'Business discuss',
-        status: 'Completed'
-      }
-    ]
+
   },
 
   'business-opportunity-received': {
@@ -201,53 +353,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        referralName: 'John Anderson',
-        email: 'john.anderson@email.com',
-        phone: '+1-555-0123',
-        date: '2025-09-15',
-        status: 'New',
-        businessClosed: 'no'
-      },
-      {
-        id: 2,
-        referralName: 'Sarah Wilson',
-        email: 'sarah.wilson@company.com',
-        phone: '+1-555-0456',
-        date: '2025-09-18',
-        status: 'In Progress',
-        businessClosed: 'no'
-      },
-      {
-        id: 3,
-        referralName: 'Michael Chen',
-        email: 'mchen@techcorp.com',
-        phone: '+1-555-0789',
-        date: '2025-09-20',
-        status: 'Closed',
-        businessClosed: 'yes'
-      },
-      {
-        id: 4,
-        referralName: 'Emily Rodriguez',
-        email: 'emily.r@startup.io',
-        phone: '+1-555-0321',
-        date: '2025-09-22',
-        status: 'New',
-        businessClosed: 'no'
-      },
-      {
-        id: 5,
-        referralName: 'David Thompson',
-        email: 'dthompson@consulting.com',
-        phone: '+1-555-0654',
-        date: '2025-09-23',
-        status: 'In Progress',
-        businessClosed: 'no'
-      }
-    ]
+
   },
 
   'business-opportunity-given': {
@@ -378,44 +484,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        date: '2025-09-16',
-        to: 'David Smith',
-        referral: 'Tech Solutions Inc',
-        email: 'contact@techsolutions.com',
-        phone: '+1-555-2345',
-        type: 'Direct',
-        referralStatus: 'Completed',
-        comments: 'Successfully connected for software development project',
-        status: 'Active'
-      },
-      {
-        id: 2,
-        date: '2025-09-19',
-        to: 'Phillips Johnson',
-        referral: 'Marketing Pro Agency',
-        email: 'info@marketingpro.com',
-        phone: '+1-555-6789',
-        type: 'Indirect',
-        referralStatus: 'In Progress',
-        comments: 'Initial meeting scheduled for next week',
-        status: 'Active'
-      },
-      {
-        id: 3,
-        date: '2025-09-21',
-        to: 'Mike Williams',
-        referral: 'Finance Experts LLC',
-        email: 'hello@financeexperts.com',
-        phone: '+1-555-9876',
-        type: 'Consultation',
-        referralStatus: 'Pending',
-        comments: 'Waiting for client response on consultation proposal',
-        status: 'Active'
-      }
-    ]
+
   },
 
   'business-closed': {
@@ -499,58 +568,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        date: '2025-09-15',
-        to: 'David Smith',
-        amount: '25000',
-        businessType: 'Consulting',
-        referralType: 'Direct Referral',
-        comments: 'Successfully closed consulting project for new client',
-        status: 'Completed'
-      },
-      {
-        id: 2,
-        date: '2025-09-18',
-        to: 'Phillips Johnson',
-        amount: '45000',
-        businessType: 'Software Development',
-        referralType: 'Indirect Referral',
-        comments: 'Web development project completed on time',
-        status: 'Completed'
-      },
-      {
-        id: 3,
-        date: '2025-09-20',
-        to: 'Mike Williams',
-        amount: '18500',
-        businessType: 'Marketing Services',
-        referralType: 'Direct Referral',
-        comments: 'Digital marketing campaign delivered excellent results',
-        status: 'Completed'
-      },
-      {
-        id: 4,
-        date: '2025-09-22',
-        to: 'David Smith',
-        amount: '32000',
-        businessType: 'Real Estate',
-        referralType: 'Self Generated',
-        comments: 'Property sale commission received',
-        status: 'In Progress'
-      },
-      {
-        id: 5,
-        date: '2025-09-23',
-        to: 'Phillips Johnson',
-        amount: '15000',
-        businessType: 'Finance',
-        referralType: 'Indirect Referral',
-        comments: 'Financial planning services for corporate client',
-        status: 'Completed'
-      }
-    ]
+
   },
 
   'meetings': {
@@ -809,26 +827,7 @@ export const businessSections = {
       showExportPrint: false,
       showAddButton: false
     },
-    data: [
-      {
-        id: 1,
-        eventName: 'Networking Breakfast',
-        startDateTime: '2025-09-25 08:00 AM',
-        location: 'Conference Hall A'
-      },
-      {
-        id: 2,
-        eventName: 'Business Workshop',
-        startDateTime: '2025-09-28 02:00 PM',
-        location: 'Training Center'
-      },
-      {
-        id: 3,
-        eventName: 'Annual Meeting',
-        startDateTime: '2025-10-05 10:00 AM',
-        location: 'Main Auditorium'
-      }
-    ]
+
   },
 
   'visitors': {
@@ -1086,44 +1085,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        visitorName: 'David Johnson',
-        email: 'david66@gmail.com',
-        phone: '9988776655',
-        visitDate: '2025-09-24',
-        companyName: 'NC Limited',
-        registrationType: 'visitor',
-        registrationChapter: 'ekam-iconic',
-        firstName: 'David',
-        lastName: 'Johnson',
-        category: 'advertising-agency',
-        streetAddress: '1266, KPHB Phase 1',
-        city: 'Hyderabad',
-        state: 'Telangana',
-        pincode: '500072',
-        country: 'India'
-      },
-      {
-        id: 2,
-        visitorName: 'Sarah Wilson',
-        email: 'sarah.w@company.com',
-        phone: '9876543210',
-        visitDate: '2025-09-26',
-        companyName: 'Tech Solutions',
-        registrationType: 'guest',
-        registrationChapter: 'ekam-elite',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-        category: 'technology',
-        streetAddress: '456 Tech Park',
-        city: 'Bangalore',
-        state: 'Karnataka',
-        pincode: '560001',
-        country: 'India'
-      }
-    ]
+
   },
 
   'my-feeds': {
@@ -1198,26 +1160,7 @@ export const businessSections = {
       submitText: 'Submit',
       cancelText: 'Cancel'
     },
-    data: [
-      {
-        id: 1,
-        title: 'Networking Success Story',
-        content: 'Great networking event last week. Met amazing professionals and made valuable connections.',
-        author: 'John Smith',
-        publishDate: '2025-09-20',
-        category: 'networking',
-        status: 'Published'
-      },
-      {
-        id: 2,
-        title: 'Business Opportunity Alert',
-        content: 'New business opportunities available in tech sector. Interested members please reach out.',
-        author: 'Jane Doe',
-        publishDate: '2025-09-22',
-        category: 'business',
-        status: 'Published'
-      }
-    ]
+
   },
 
   'one-to-many': {
@@ -1252,29 +1195,7 @@ export const businessSections = {
       showExportPrint: false,
       showAddButton: false
     },
-    data: [
-      {
-        id: 1,
-        meetingDate: '2025-09-25',
-        enteredBy: 'David Smith',
-        enteredDate: '2025-09-20',
-        status: 'Scheduled'
-      },
-      {
-        id: 2,
-        meetingDate: '2025-09-18',
-        enteredBy: 'Phillips Johnson',
-        enteredDate: '2025-09-15',
-        status: 'Completed'
-      },
-      {
-        id: 3,
-        meetingDate: '2025-09-30',
-        enteredBy: 'Mike Williams',
-        enteredDate: '2025-09-22',
-        status: 'Scheduled'
-      }
-    ]
+
   }
 };
 
