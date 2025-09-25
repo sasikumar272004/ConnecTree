@@ -202,148 +202,152 @@ const DataTable = ({
         </div>
       </div>
 
-      <div className="relative rounded-2xl p-[2px] border-2 border-slate-100/80 ">
-        {/* Table controls */}
-        <div className="flex items-center p-3 justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-400">Show</span>
-            <select
-              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span className="text-sm text-slate-400">entries</span>
-          </div>
+      <div className="relative rounded-2xl p-[2px] bg-gradient-to-br from-gray-300 via-30% via-gray-700 to-gray-800">
+          <div className="rounded-2xl bg-gray-900">
 
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              className="bg-slate-800 border border-slate-700 rounded pl-10 pr-4 py-2 text-white text-sm w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+                {/* Table controls */}
+                <div className="flex items-center p-3 justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-slate-400">Show</span>
+                    <select
+                      className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm"
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </select>
+                    <span className="text-sm text-slate-400">entries</span>
+                  </div>
 
-        {/* Data Table */}
-        <div className="border border-slate-700 overflow-hidden bg-slate-900 rounded-2xl">
-          <table className="w-full table-fixed">
-            <thead className="bg-orange-500">
-              <tr>
-                {columns.map((column, index) => (
-                  <th
-                    key={column.key}
-                    className={`px-4 py-3 text-left text-white font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
-                      index < columns.length - 1 ? 'border-r border-orange-400' : ''
-                    }`}
-                  >
-                    {column.label}
-                    {column.sortable && <span className="ml-1 text-xs">↕</span>}
-                  </th>
-                ))}
-                {showActions && (
-                  <th className="px-4 py-3 text-left text-white font-medium text-sm border-l border-orange-400">
-                    Actions
-                  </th>
-                )}
-              </tr>
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
+                    <input
+                      type="text"
+                      placeholder={searchPlaceholder}
+                      className="bg-slate-800 border border-slate-700 rounded pl-10 pr-4 py-2 text-white text-sm w-64"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Data Table */}
+                <div className="border border-slate-700 overflow-hidden bg-slate-900 rounded-2xl">
+                  <table className="w-full table-fixed">
+                    <thead className="bg-orange-500">
+                      <tr>
+                        {columns.map((column, index) => (
+                          <th
+                            key={column.key}
+                            className={`px-4 py-3 text-left text-white font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+                              index < columns.length - 1 ? 'border-r border-orange-400' : ''
+                            }`}
+                          >
+                            {column.label}
+                            {column.sortable && <span className="ml-1 text-xs">↕</span>}
+                          </th>
+                        ))}
+                        {showActions && (
+                          <th className="px-4 py-3 text-left text-white font-medium text-sm border-l border-orange-400">
+                            Actions
+                          </th>
+                        )}
+                      </tr>
+                      
+                      {/* Column filters row - EVERY column gets a search */}
+                      <tr className="bg-slate-900">
+                        {columns.map((column, index) => (
+                          <td
+                            key={`filter-${column.key}`}
+                            className={`px-4 py-2 overflow-hidden text-ellipsis whitespace-nowrap ${
+                              index < columns.length - 1 ? 'border-r border-slate-600' : ''
+                            }`}
+                          >
+                            <input
+                              type="text"
+                              placeholder={`Search ${column.label}`}
+                              className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
+                              value={filterValues[column.key] || ''}
+                              onChange={(e) => handleFilterChange(column.key, e.target.value)}
+                            />
+                          </td>
+                        ))}
+                        {showActions && (
+                          <td className="px-4 py-2 border-l border-slate-600 overflow-hidden text-ellipsis whitespace-nowrap">
+                            <input
+                              type="text"
+                              placeholder="Search Actions"
+                              className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
+                              value={filterValues['actions'] || ''}
+                              onChange={(e) => handleFilterChange('actions', e.target.value)}
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Data rows */}
+                      {paginatedData.length > 0 ? (
+                        paginatedData.map((item, rowIndex) => (
+                          <tr
+                            key={item.id || rowIndex}
+                            className={`border-b border-slate-700 transition-colors ${
+                              rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
+                            } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
+                            onClick={() => clickableRows && handleRowClick(item)}
+                          >
+                            {columns.map((column, colIndex) => (
+                              <td
+                                key={column.key}
+                                className={`px-4 py-3 text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+                                  colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
+                                }`}
+                              >
+                                {column.render ? column.render(item[column.key], item) : item[column.key]}
+                              </td>
+                            ))}
+                            {showActions && (
+                              <td className="px-4 py-3 border-l border-slate-600">
+                                <div className="flex space-x-2 justify-center">
+                                  
+                                  
+                                  {/* Edit Button */}
+                                  {onEdit && (
+                              <button
+          onClick={(e) => handleEdit(item, e)}
+          className="p-2 flex items-center space-x-2 text-white rounded transition-colors"
+          title="Edit"
+        >
+          <span>Edit</span>
+          <FaEdit className="text-sm" />
+        </button>
+
+                                  )}
+                                  
+                                  
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
+                            No data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               
-              {/* Column filters row - EVERY column gets a search */}
-              <tr className="bg-slate-900">
-                {columns.map((column, index) => (
-                  <td
-                    key={`filter-${column.key}`}
-                    className={`px-4 py-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-                      index < columns.length - 1 ? 'border-r border-slate-600' : ''
-                    }`}
-                  >
-                    <input
-                      type="text"
-                      placeholder={`Search ${column.label}`}
-                      className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
-                      value={filterValues[column.key] || ''}
-                      onChange={(e) => handleFilterChange(column.key, e.target.value)}
-                    />
-                  </td>
-                ))}
-                {showActions && (
-                  <td className="px-4 py-2 border-l border-slate-600 overflow-hidden text-ellipsis whitespace-nowrap">
-                    <input
-                      type="text"
-                      placeholder="Search Actions"
-                      className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
-                      value={filterValues['actions'] || ''}
-                      onChange={(e) => handleFilterChange('actions', e.target.value)}
-                    />
-                  </td>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Data rows */}
-              {paginatedData.length > 0 ? (
-                paginatedData.map((item, rowIndex) => (
-                  <tr
-                    key={item.id || rowIndex}
-                    className={`border-b border-slate-700 transition-colors ${
-                      rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
-                    } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
-                    onClick={() => clickableRows && handleRowClick(item)}
-                  >
-                    {columns.map((column, colIndex) => (
-                      <td
-                        key={column.key}
-                        className={`px-4 py-3 text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
-                          colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
-                        }`}
-                      >
-                        {column.render ? column.render(item[column.key], item) : item[column.key]}
-                      </td>
-                    ))}
-                    {showActions && (
-                      <td className="px-4 py-3 border-l border-slate-600">
-                        <div className="flex space-x-2 justify-center">
-                          
-                          
-                          {/* Edit Button */}
-                          {onEdit && (
-                      <button
-  onClick={(e) => handleEdit(item, e)}
-  className="p-2 flex items-center space-x-2 text-white rounded transition-colors"
-  title="Edit"
->
-  <span>Edit</span>
-  <FaEdit className="text-sm" />
-</button>
-
-                          )}
-                          
-                          
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
-                    No data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </div>
       </div>
 
       {/* Pagination */}
@@ -711,47 +715,67 @@ const DataForm = ({
           Business &gt; {title}
         </div>
       </div>
-
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-slate-900 rounded-lg border border-slate-700 p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className={`${currentFields.length < 10 ? 'space-y-6' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'}`}>
-              {currentFields.map((field) => (
-                <div key={field.key} className={field.type === 'textarea' && currentFields.length >= 10 ? 'md:col-span-2 lg:col-span-3' : ''}>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  {renderField(field)}
-                  {errors[field.key] && (
-                    <p className="mt-1 text-sm text-red-500">{errors[field.key]}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-end space-x-4 pt-6 border-t border-slate-700">
-              {onCancel && (
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
-                  disabled={isLoading}
-                >
-                  {cancelText}
-                </button>
+    
+        <div className=" flex items-center justify-center bg-slate-950">
+  <div className="relative max-w-4xl w-full rounded-2xl p-[2px] bg-gradient-to-br from-gray-300 via-gray-700 to-gray-800">
+    <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div
+          className={`${
+            currentFields.length < 10
+              ? "space-y-6"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          }`}
+        >
+          {currentFields.map((field) => (
+            <div
+              key={field.key}
+              className={
+                field.type === "textarea" && currentFields.length >= 10
+                  ? "md:col-span-2 lg:col-span-3"
+                  : ""
+              }
+            >
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                {field.label}
+                {field.required && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
+              </label>
+              {renderField(field)}
+              {errors[field.key] && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors[field.key]}
+                </p>
               )}
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Submitting...' : submitText}
-              </button>
             </div>
-          </form>
+          ))}
         </div>
-      </div>
+
+        <div className="flex items-center justify-end space-x-4 pt-6 border-t border-slate-700">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+              disabled={isLoading}
+            >
+              {cancelText}
+            </button>
+          )}
+          <button
+            type="submit"
+            className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? "Submitting..." : submitText}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
     </div>
   );
 };
