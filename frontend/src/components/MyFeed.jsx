@@ -69,10 +69,10 @@ const MyFeedComponent = () => {
         const posts = data.data?.posts || [];
         const paginationData = data.data?.pagination || {};
 
-        // Debug: Log media data for posts
+        // Debug: Log image data for posts
         posts.forEach(post => {
-          if (post.media && post.media.length > 0) {
-            console.log('Post media:', post.media);
+          if (post.image) {
+            console.log('Post image:', post.image);
           }
         });
 
@@ -133,7 +133,7 @@ const MyFeedComponent = () => {
         comments: 0,
         shares: 0,
         createdAt: new Date().toISOString(),
-        media: []
+        image: null
       }
     ];
   };

@@ -16,15 +16,17 @@ connectDB();
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration
+// CORS configuration - MOVE THIS BEFORE HELMET
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Security middleware - CONFIGURE HELMET TO ALLOW CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // Body parser middleware
@@ -43,9 +45,16 @@ app.use('/api/', limiter);
 // Prevent parameter pollution
 app.use(hpp());
 
-// Serve static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files with explicit CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
+// Rest of your code remains the same...
 // Import and use routes CAREFULLY
 try {
   const authRoutes = require('./routes/authRoutes');
@@ -71,7 +80,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'API is running' });
 });
 
-// 404 handler - NO * WILDCARD
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
 });

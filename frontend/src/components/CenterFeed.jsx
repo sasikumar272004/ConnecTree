@@ -229,38 +229,14 @@ const CenterFeed = ({
                 <p className="text-gray-200 whitespace-pre-line leading-relaxed text-sm lg:text-base">{post.content}</p>
               </div>
 
-              {/* Post Media */}
-              {post.media && post.media.length > 0 && (
-                <div className="px-4 lg:px-6 pb-3 lg:pb-4">
-                  {post.media.map((mediaItem, index) => {
-                    // Handle both string URLs and object formats
-                    const mediaUrl = typeof mediaItem === 'string' ? mediaItem : mediaItem?.url;
-                    const mediaType = typeof mediaItem === 'string' ? 'image' : mediaItem?.type || 'image';
-
-                    return (
-                      <div key={index} className="mb-3">
-                        {mediaType?.startsWith('image/') || mediaType === 'image' ? (
-                          <img
-                            src={mediaUrl}
-                            alt="Post content"
-                            className="w-full h-auto rounded-xl object-cover border border-gray-800"
-                            onError={(e) => {
-                              console.error('Image failed to load:', mediaUrl);
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        ) : mediaType?.startsWith('video/') || mediaType === 'video' ? (
-                          <video
-                            controls
-                            className="w-full rounded-xl border border-gray-800"
-                          >
-                            <source src={mediaUrl} type={mediaType} />
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+              {/* Post Image - Instagram Style */}
+              {post.image && (
+                <div className="w-full">
+                  <img
+                    src={`http://localhost:5000${post.image}`}
+                    alt="Post content"
+                    className="w-full h-auto max-h-96 object-cover"
+                  />
                 </div>
               )}
 
