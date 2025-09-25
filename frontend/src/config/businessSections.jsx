@@ -251,8 +251,8 @@ export const businessSections = {
           ]
         },
         {
-          key: 'invitedBy',
-          label: 'Invited By',
+          key: 'initiatedBy', // ← CHANGED: was 'invitedBy', now 'initiatedBy' to match table
+        label: 'Initiated By',
           type: 'select',
           required: true,
           placeholder: 'Select a member',
@@ -311,7 +311,7 @@ export const businessSections = {
               value === 'Completed' ? ' text-gray-400' : 
               value === 'In Progress' ? ' text-gray-400' : 
               value === 'Pending' ? ' text-gray-400' :
-              'bg-gray-600 text-gray-300'
+              ' text-gray-300'
             }`}>
               {value}
             </span>
@@ -326,7 +326,7 @@ export const businessSections = {
             <span className={`px-2 py-1 rounded text-xs ${
               value === 'Active' ? ' text-gray-300' : 
               value === 'Inactive' ? ' text-gray-300' : 
-              'bg-gray-600 text-gray-300'
+              ' text-gray-300'
             }`}>
               {value}
             </span>

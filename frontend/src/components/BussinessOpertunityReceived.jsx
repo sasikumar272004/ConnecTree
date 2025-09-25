@@ -16,8 +16,6 @@ const getAuthToken = () => {
 };
 
 // Enhanced API Service for Business Opportunity Received
-// Complete businessOpportunityService object with syntax fix:
-
 const businessOpportunityService = {
   fetchData: async () => {
     try {
@@ -76,26 +74,26 @@ const businessOpportunityService = {
   updateData: async (id, data) => {
     try {
       const token = getAuthToken();
-      
-      console.log('Attempting to update item:', id, 'with data:', data);
-      console.log('API URL:', `${API_BASE_URL}/data/business-opportunity-received/${id}`);
-      
-      // Convert string ID to proper format if needed
-      let processedId = id;
-      if (typeof id === 'string' && !isNaN(id)) {
-        processedId = id;
-      }
-      
-      // Prepare the payload - don't include the ID in the body
+
+      console.log('=== UPDATE SERVICE DEBUG ===');
+      console.log('Service updateData called with id:', id);
+      console.log('ID type:', typeof id);
+      console.log('ID length:', id ? id.length : 'null');
+      console.log('Is MongoDB ObjectId format?', /^[0-9a-fA-F]{24}$/.test(id));
+      console.log('Update data:', data);
+
+      const apiUrl = `${API_BASE_URL}/data/business-opportunity-received/${id}`;
+      console.log('Making request to:', apiUrl);
+
+      // Clean the payload
       const updatePayload = { ...data };
       delete updatePayload.id;
       delete updatePayload._id;
-      
-      console.log('Processed ID:', processedId);
-      console.log('Update payload (cleaned):', updatePayload);
-      
-      const response = await fetch(`${API_BASE_URL}/data/business-opportunity-received/${processedId}`, {
-        method: 'PUT', // Changed back to PUT since your server supports it
+
+      console.log('Cleaned payload:', updatePayload);
+
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
@@ -112,14 +110,9 @@ const businessOpportunityService = {
           console.log('Error response data:', errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseError) {
-          console.log('Could not parse error response as JSON');
-          try {
-            const errorText = await response.text();
-            console.log('Error response text:', errorText);
-            errorMessage = errorText || errorMessage;
-          } catch (textError) {
-            console.log('Could not get error response as text either');
-          }
+          const errorText = await response.text();
+          console.log('Error response text:', errorText);
+          errorMessage = errorText || errorMessage;
         }
         throw new Error(errorMessage);
       }
@@ -184,10 +177,10 @@ const tableColumns = [
     sortable: true,
     render: (value) => (
       <span className={`px-2 py-1 rounded text-xs ${
-        value === 'Closed' ? 'bg-red-500 text-white' :
-        value === 'In Progress' ? 'bg-blue-500 text-white' :
-        value === 'New' ? 'bg-green-500 text-white' :
-        'bg-gray-500 text-gray-300'
+        value === 'Closed' ? ' text-white' :
+        value === 'In Progress' ? ' text-white' :
+        value === 'New' ? ' text-white' :
+        ' text-gray-300'
       }`}>
         {value}
       </span>
@@ -467,7 +460,7 @@ const DataTable = ({
   );
 };
 
-// Form Component
+// Form Component - FIXED VERSION
 const DataForm = ({ 
   itemId,
   onSubmit, 
@@ -486,6 +479,8 @@ const DataForm = ({
   // Load data when component mounts or itemId changes
   useEffect(() => {
     const loadItemData = async () => {
+      console.log('loadItemData called with itemId:', itemId, 'isEdit:', isEdit);
+      
       if (itemId && isEdit) {
         try {
           setIsLoadingData(true);
@@ -499,10 +494,15 @@ const DataForm = ({
               console.log('Stored item from sessionStorage:', item);
               
               // Check if this is the right item (compare both _id and id)
-              const itemMatches = (item._id && item._id === itemId) || 
-                                 (item.id && item.id === itemId) ||
-                                 (item._id && item._id.toString() === itemId) ||
-                                 (item.id && item.id.toString() === itemId);
+              const itemMatches = (item._id && item._id.toString() === itemId.toString()) || 
+                                 (item.id && item.id.toString() === itemId.toString());
+              
+              console.log('Item match check:', {
+                storedId: item.id,
+                storedMongoId: item._id,
+                expectedId: itemId,
+                matches: itemMatches
+              });
               
               if (itemMatches) {
                 console.log('Using selected row data from sessionStorage');
@@ -511,8 +511,10 @@ const DataForm = ({
                 setIsLoadingData(false);
                 return;
               } else {
-                console.log('Stored item ID mismatch. Expected:', itemId, 'Got:', item._id || item.id);
+                console.log('Stored item ID mismatch. Expected:', itemId, 'Got ID:', item.id, 'Got _id:', item._id);
               }
+            } else {
+              console.log('No stored item found in sessionStorage');
             }
           } catch (storageError) {
             console.warn('Cannot access sessionStorage:', storageError);
@@ -530,6 +532,7 @@ const DataForm = ({
           setIsLoadingData(false);
         }
       } else {
+        console.log('Skipping data load - no itemId or not in edit mode');
         setIsLoadingData(false);
       }
     };
@@ -729,7 +732,7 @@ const DataForm = ({
   );
 };
 
-// Main Business Opportunity Received Component
+// Main Business Opportunity Received Component - FIXED VERSION
 const BusinessOpportunityReceived = () => {
   const navigate = useNavigate();
   const { tab, section, view } = useParams(); // Get all params from Home component
@@ -741,6 +744,20 @@ const BusinessOpportunityReceived = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValues, setFilterValues] = useState({});
 
+  const debugDataStructure = () => {
+    console.log('=== DATA STRUCTURE DEBUG ===');
+    if (data.length > 0) {
+      console.log('Sample data item:', data[0]);
+      console.log('Keys in first item:', Object.keys(data[0] || {}));
+      console.log('Has _id?', !!data[0]?._id);
+      console.log('Has id?', !!data[0]?.id);
+      console.log('_id value:', data[0]?._id);
+      console.log('id value:', data[0]?.id);
+    } else {
+      console.log('No data available for debugging');
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     loadData();
@@ -751,6 +768,7 @@ const BusinessOpportunityReceived = () => {
       setLoading(true);
       const result = await businessOpportunityService.fetchData();
       setData(result);
+      debugDataStructure(); // Debug data structure after loading
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -761,39 +779,39 @@ const BusinessOpportunityReceived = () => {
   };
 
   const handleEdit = (item) => {
+    console.log('=== HANDLE EDIT DEBUG ===');
     console.log('Edit clicked for item:', item);
     console.log('Complete item object:', JSON.stringify(item, null, 2));
     console.log('Item _id:', item._id);
     console.log('Item id:', item.id);
     console.log('Current location:', location.pathname);
-    
+
     try {
       // Store the selected row data for the form
       try {
         sessionStorage.setItem('editingItem', JSON.stringify(item));
-        console.log('Selected row data stored in sessionStorage:', item);
+        console.log('Selected row data stored in sessionStorage');
       } catch (e) {
         console.warn('Cannot use sessionStorage:', e);
       }
-      
-      // Use MongoDB _id if available, otherwise use id
-      const itemId = item._id || item.id;
-      console.log('Using itemId for navigation:', itemId);
-      
-      // Navigate using your existing route structure
+
+      // CRITICAL: Always use MongoDB _id - this is the fix!
+      const itemId = item._id;
+      console.log('Using MongoDB _id for navigation:', itemId);
+      console.log('ItemId type:', typeof itemId);
+
+      if (!itemId) {
+        console.error('No _id found in item:', item);
+        throw new Error('No _id found in item object');
+      }
+
+      // Navigate using MongoDB _id
       const editPath = `/home/business/business-opportunity-received/edit-${itemId}`;
       console.log('Navigating to:', editPath);
       navigate(editPath);
     } catch (error) {
       console.error('Navigation error:', error);
-      // Fallback - try alternative navigation
-      try {
-        const itemId = item._id || item.id;
-        window.location.href = `/home/business/business-opportunity-received/edit-${itemId}`;
-      } catch (fallbackError) {
-        console.error('Fallback navigation also failed:', fallbackError);
-        alert('Unable to navigate to edit form. Please check console for errors.');
-      }
+      alert('Unable to navigate to edit form: ' + error.message);
     }
   };
 
@@ -804,6 +822,7 @@ const BusinessOpportunityReceived = () => {
       
       if (view && view.startsWith('edit-')) {
         itemId = view.replace('edit-', '');
+        console.log('Extracted itemId from view param:', itemId);
       }
       
       if (itemId) {
@@ -816,13 +835,6 @@ const BusinessOpportunityReceived = () => {
           if (storedItem) {
             originalData = JSON.parse(storedItem);
             console.log('Original item data:', originalData);
-            
-            // Use the MongoDB _id if available, otherwise use id
-            const mongoId = originalData._id;
-            if (mongoId && mongoId !== itemId) {
-              console.log('Using MongoDB _id instead:', mongoId);
-              itemId = mongoId;
-            }
           }
         } catch (e) {
           console.warn('Cannot access sessionStorage:', e);
@@ -839,18 +851,16 @@ const BusinessOpportunityReceived = () => {
         console.log('Final itemId for update:', itemId);
         console.log('Update payload (only editable fields):', updatePayload);
         
+        // FIXED: Use the MongoDB _id for the API call
         const updatedItem = await businessOpportunityService.updateData(itemId, updatePayload);
         
         // Merge the updated fields with original data for local state update
         const mergedItem = originalData ? { ...originalData, ...updatedItem } : updatedItem;
         
-        // Update the data in the local state using the correct identifier
+        // Update the data in the local state using the MongoDB _id
         setData(prev => prev.map(item => {
-          // Check both _id and id for matching
-          const itemMatches = (item._id && item._id === itemId) || 
-                             (item.id && item.id === itemId) ||
-                             (item._id && item._id === originalData?._id) ||
-                             (item.id && item.id === originalData?.id);
+          // FIXED: Match by MongoDB _id
+          const itemMatches = item._id === itemId;
           return itemMatches ? mergedItem : item;
         }));
         
@@ -951,6 +961,7 @@ const BusinessOpportunityReceived = () => {
   // Show form view for editing
   if (view && view.startsWith('edit-')) {
     const itemId = view.replace('edit-', '');
+    console.log('Rendering form for itemId:', itemId);
     return (
       <DataForm
         itemId={itemId}
@@ -969,7 +980,7 @@ const BusinessOpportunityReceived = () => {
         const item = JSON.parse(storedItem);
         return (
           <DataForm
-            itemId={item.id}
+            itemId={item.id || item._id}
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
             isEdit={true}
@@ -995,4 +1006,4 @@ const BusinessOpportunityReceived = () => {
   );
 };
 
-export default BusinessOpportunityReceived;
+export default BusinessOpportunityReceived
