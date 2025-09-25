@@ -5,9 +5,15 @@ import React, { useState, useEffect } from 'react';
 // API base URL
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// Helper function to get auth token
+// Helper function to get auth token - FIXED for Claude.ai compatibility
 const getAuthToken = () => {
-  return localStorage.getItem('token');
+  // For Claude.ai artifacts, we'll use a fallback token or make it optional
+  try {
+    return localStorage?.getItem('token') || null;
+  } catch (error) {
+    console.warn('localStorage not available, proceeding without token');
+    return null;
+  }
 };
 
 // API service functions
@@ -15,9 +21,11 @@ export const businessDataService = {
   // Generic function to fetch data from API
   fetchData: async (sectionId) => {
     try {
+      const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/data/${sectionId}`, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
 
@@ -40,8 +48,8 @@ export const businessDataService = {
       const response = await fetch(`${API_BASE_URL}/data/${sectionId}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify(data)
       });
@@ -65,8 +73,8 @@ export const businessDataService = {
       const response = await fetch(`${API_BASE_URL}/data/${sectionId}/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify(data)
       });
@@ -90,8 +98,8 @@ export const businessDataService = {
       const response = await fetch(`${API_BASE_URL}/data/${sectionId}/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
 
@@ -107,11 +115,13 @@ export const businessDataService = {
   }
 };
 
-// React hooks for business data management
+// Enhanced React hooks with edit state management
 export const useP2PData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,6 +154,8 @@ export const useP2PData = () => {
     try {
       const updatedItem = await businessDataService.updateData('p2p', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -161,13 +173,42 @@ export const useP2PData = () => {
     }
   };
 
+  // Edit functionality
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -175,6 +216,8 @@ export const useBusinessOpportunitiesReceivedData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -207,6 +250,8 @@ export const useBusinessOpportunitiesReceivedData = () => {
     try {
       const updatedItem = await businessDataService.updateData('business-opportunity-received', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -224,13 +269,41 @@ export const useBusinessOpportunitiesReceivedData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -238,6 +311,8 @@ export const useBusinessOpportunitiesGivenData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,6 +345,8 @@ export const useBusinessOpportunitiesGivenData = () => {
     try {
       const updatedItem = await businessDataService.updateData('business-opportunity-given', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -287,13 +364,41 @@ export const useBusinessOpportunitiesGivenData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -301,6 +406,8 @@ export const useBusinessClosedData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -333,6 +440,8 @@ export const useBusinessClosedData = () => {
     try {
       const updatedItem = await businessDataService.updateData('business-closed', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -350,13 +459,41 @@ export const useBusinessClosedData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -364,6 +501,8 @@ export const useMeetingsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -396,6 +535,8 @@ export const useMeetingsData = () => {
     try {
       const updatedItem = await businessDataService.updateData('meetings', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -413,13 +554,41 @@ export const useMeetingsData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -427,6 +596,8 @@ export const useVisitorsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -459,6 +630,8 @@ export const useVisitorsData = () => {
     try {
       const updatedItem = await businessDataService.updateData('visitors', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -476,13 +649,41 @@ export const useVisitorsData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (formData = null) => {
+    if (editingId) {
+      // Use provided formData or fallback to editForm state
+      const dataToUpdate = formData || editForm;
+      await updateItem(editingId, dataToUpdate);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -490,6 +691,8 @@ export const useMyFeedsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -522,6 +725,8 @@ export const useMyFeedsData = () => {
     try {
       const updatedItem = await businessDataService.updateData('my-feeds', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -539,13 +744,39 @@ export const useMyFeedsData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async () => {
+    if (editingId && editForm) {
+      await updateItem(editingId, editForm);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -553,6 +784,8 @@ export const useOneToManyData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -585,6 +818,8 @@ export const useOneToManyData = () => {
     try {
       const updatedItem = await businessDataService.updateData('one-to-many', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -602,13 +837,39 @@ export const useOneToManyData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async () => {
+    if (editingId && editForm) {
+      await updateItem(editingId, editForm);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -616,6 +877,8 @@ export const useUpcomingEventsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -648,6 +911,8 @@ export const useUpcomingEventsData = () => {
     try {
       const updatedItem = await businessDataService.updateData('upcoming-events', id, updateData);
       setData(prev => prev.map(item => item.id === id ? updatedItem : item));
+      setEditingId(null);
+      setEditForm({});
       return updatedItem;
     } catch (err) {
       setError(err.message);
@@ -665,13 +930,39 @@ export const useUpcomingEventsData = () => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async () => {
+    if (editingId && editForm) {
+      await updateItem(editingId, editForm);
+    }
+  };
+
+  const updateEditForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    cancelEdit,
+    saveEdit,
+    updateEditForm
   };
 };
 
@@ -698,6 +989,7 @@ export const utils = {
 
   // Truncate text
   truncateText: (text, maxLength = 100) => {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + '...';
   },

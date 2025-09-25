@@ -58,15 +58,52 @@ const DataTable = ({
     }
   };
 
-  // Filter and search logic
+  // Handle edit action
+  const handleEdit = (item, e) => {
+    e.stopPropagation(); // Prevent row click event
+    if (onEdit) {
+      onEdit(item);
+    }
+  };
+
+  // Handle view action
+  const handleView = (item, e) => {
+    e.stopPropagation(); // Prevent row click event
+    if (onView) {
+      onView(item);
+    }
+  };
+
+  // Handle delete action
+  const handleDelete = (item, e) => {
+    e.stopPropagation(); // Prevent row click event
+    if (onDelete) {
+      onDelete(item);
+    }
+  };
+
+  // Enhanced filter and search logic
   const filteredData = data.filter(item => {
-    const matchesSearch = Object.values(item).some(value =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Global search
+    const matchesSearch = searchTerm === '' || 
+      Object.values(item).some(value =>
+        String(value).toLowerCase().includes(searchTerm.toLowerCase())
+      );
     
-    const matchesFilters = Object.entries(filterValues).every(([key, value]) =>
-      !value || String(item[key]).toLowerCase().includes(String(value).toLowerCase())
-    );
+    // Column-specific filters
+    const matchesFilters = Object.entries(filterValues).every(([key, value]) => {
+      if (!value) return true; // No filter applied for this column
+      
+      // For Actions column, search in action buttons or any action-related text
+      if (key === 'actions') {
+        // You can customize what to search in actions column
+        const actionTexts = ['Edit', 'View', 'Delete'].join(' ').toLowerCase();
+        return actionTexts.includes(value.toLowerCase());
+      }
+      
+      // For regular columns
+      return String(item[key] || '').toLowerCase().includes(String(value).toLowerCase());
+    });
     
     return matchesSearch && matchesFilters;
   });
@@ -165,123 +202,149 @@ const DataTable = ({
         </div>
       </div>
 
-     <div className="relative rounded-2xl p-[2px] border-2 border-slate-100/80 ">
-       {/* Table controls */}
-      <div className="flex items-center  p-3 justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-slate-400">Show</span>
-          <select
-            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm"
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-          <span className="text-sm text-slate-400">entries</span>
-        </div>
+      <div className="relative rounded-2xl p-[2px] border-2 border-slate-100/80 ">
+        {/* Table controls */}
+        <div className="flex items-center p-3 justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-slate-400">Show</span>
+            <select
+              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-sm"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-sm text-slate-400">entries</span>
+          </div>
 
-        <div className="relative">
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
-          <input
-            type="text"
-            placeholder={searchPlaceholder}
-            className="bg-slate-800 border border-slate-700 rounded pl-10 pr-4 py-2 text-white text-sm w-64"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Data Table */}
-<div className="border border-slate-700 overflow-hidden bg-slate-900 rounded-2xl">
-  <table className="w-full table-fixed">
-    <thead className="bg-orange-500">
-      <tr>
-        {columns.map((column, index) => (
-          <th
-            key={column.key}
-            className={`px-4 py-3 text-left text-white font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
-              index < columns.length - 1 ? 'border-r border-orange-400' : ''
-            }`}
-          >
-            {column.label}
-            {column.sortable && <span className="ml-1 text-xs">↕</span>}
-          </th>
-        ))}
-        {showActions && (
-          <th className="px-4 py-3 text-left text-gray-600 font-medium text-sm">
-            Actions
-          </th>
-        )}
-      </tr>
-    </thead>
-    <tbody>
-      {/* Column filters row */}
-      <tr className="bg-slate-900">
-        {columns.map((column, index) => (
-          <td
-            key={`filter-${column.key}`}
-            className={`px-4 py-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-              index < columns.length - 1 ? 'border-r border-slate-600' : ''
-            }`}
-          >
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
             <input
               type="text"
-              placeholder="Search"
-              className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
-              value={filterValues[column.key] || ''}
-              onChange={(e) => handleFilterChange(column.key, e.target.value)}
+              placeholder={searchPlaceholder}
+              className="bg-slate-800 border border-slate-700 rounded pl-10 pr-4 py-2 text-white text-sm w-64"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </td>
-        ))}
-        {showActions && <td></td>}
-      </tr>
+          </div>
+        </div>
 
-      {/* Data rows */}
-      {paginatedData.length > 0 ? (
-        paginatedData.map((item, rowIndex) => (
-          <tr
-            key={item.id || rowIndex}
-            className={`border-b border-slate-700 transition-colors ${
-              rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
-            } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
-            onClick={() => clickableRows && handleRowClick(item)}
-          >
-            {columns.map((column, colIndex) => (
-              <td
-                key={column.key}
-                className={`px-4 py-3 text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
-                  colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
-                }`}
-              >
-                {column.render ? column.render(item[column.key], item) : item[column.key]}
-              </td>
-            ))}
-            {showActions && <td>
-              <div className="flex space-x-2">
-                {/* Action buttons */}
-              </div>
-            </td>}
-          </tr>
-        ))
-      ) : (
-        <tr>
-          <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
-            No data available
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+        {/* Data Table */}
+        <div className="border border-slate-700 overflow-hidden bg-slate-900 rounded-2xl">
+          <table className="w-full table-fixed">
+            <thead className="bg-orange-500">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={column.key}
+                    className={`px-4 py-3 text-left text-white font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+                      index < columns.length - 1 ? 'border-r border-orange-400' : ''
+                    }`}
+                  >
+                    {column.label}
+                    {column.sortable && <span className="ml-1 text-xs">↕</span>}
+                  </th>
+                ))}
+                {showActions && (
+                  <th className="px-4 py-3 text-left text-white font-medium text-sm border-l border-orange-400">
+                    Actions
+                  </th>
+                )}
+              </tr>
+              
+              {/* Column filters row - EVERY column gets a search */}
+              <tr className="bg-slate-900">
+                {columns.map((column, index) => (
+                  <td
+                    key={`filter-${column.key}`}
+                    className={`px-4 py-2 overflow-hidden text-ellipsis whitespace-nowrap ${
+                      index < columns.length - 1 ? 'border-r border-slate-600' : ''
+                    }`}
+                  >
+                    <input
+                      type="text"
+                      placeholder={`Search ${column.label}`}
+                      className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
+                      value={filterValues[column.key] || ''}
+                      onChange={(e) => handleFilterChange(column.key, e.target.value)}
+                    />
+                  </td>
+                ))}
+                {showActions && (
+                  <td className="px-4 py-2 border-l border-slate-600 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <input
+                      type="text"
+                      placeholder="Search Actions"
+                      className="h-10 w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-gray-200 text-xs overflow-hidden text-ellipsis whitespace-nowrap"
+                      value={filterValues['actions'] || ''}
+                      onChange={(e) => handleFilterChange('actions', e.target.value)}
+                    />
+                  </td>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Data rows */}
+              {paginatedData.length > 0 ? (
+                paginatedData.map((item, rowIndex) => (
+                  <tr
+                    key={item.id || rowIndex}
+                    className={`border-b border-slate-700 transition-colors ${
+                      rowIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850'
+                    } ${clickableRows ? 'hover:bg-slate-600 cursor-pointer' : 'hover:bg-slate-700'}`}
+                    onClick={() => clickableRows && handleRowClick(item)}
+                  >
+                    {columns.map((column, colIndex) => (
+                      <td
+                        key={column.key}
+                        className={`px-4 py-3 text-gray-400 text-sm overflow-hidden text-ellipsis whitespace-nowrap ${
+                          colIndex < columns.length - 1 ? 'border-r border-slate-600' : ''
+                        }`}
+                      >
+                        {column.render ? column.render(item[column.key], item) : item[column.key]}
+                      </td>
+                    ))}
+                    {showActions && (
+                      <td className="px-4 py-3 border-l border-slate-600">
+                        <div className="flex space-x-2 justify-center">
+                          
+                          
+                          {/* Edit Button */}
+                          {onEdit && (
+                      <button
+  onClick={(e) => handleEdit(item, e)}
+  className="p-2 flex items-center space-x-2 text-white rounded transition-colors"
+  title="Edit"
+>
+  <span>Edit</span>
+  <FaEdit className="text-sm" />
+</button>
 
-     </div>
+                          )}
+                          
+                          
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length + (showActions ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
+                    No data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -327,21 +390,22 @@ const DataTable = ({
   );
 };
 
-// Full Screen Modal Component that mimics DataForm layout
+// FullScreenModal component (keep the same structure but ensure ALL columns have search)
 const FullScreenModal = ({ modalData, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValues, setFilterValues] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Filter and search logic
+  // Enhanced filter logic for modal
   const filteredData = modalData.data.filter(item => {
-    const matchesSearch = Object.values(item).some(value =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const matchesSearch = searchTerm === '' || 
+      Object.values(item).some(value =>
+        String(value).toLowerCase().includes(searchTerm.toLowerCase())
+      );
     
     const matchesFilters = Object.entries(filterValues).every(([key, value]) =>
-      !value || String(item[key]).toLowerCase().includes(String(value).toLowerCase())
+      !value || String(item[key] || '').toLowerCase().includes(String(value).toLowerCase())
     );
     
     return matchesSearch && matchesFilters;
@@ -359,7 +423,7 @@ const FullScreenModal = ({ modalData, onClose }) => {
 
   return (
     <div className="bg-slate-950 p-6 min-h-screen">
-      {/* Header with breadcrumb - same as DataForm */}
+      {/* Header with breadcrumb */}
       <div className="mb-6">
         <div className="text-sm text-slate-400 mb-2">
           Business &gt; Meetings &gt; Meeting Details
@@ -378,7 +442,7 @@ const FullScreenModal = ({ modalData, onClose }) => {
         </div>
       </div>
 
-      {/* Meeting Info Card - same structure as DataForm */}
+      {/* Meeting Info Card */}
       <div className="max-w-full mx-auto">
         <div className="bg-slate-900 rounded-lg border border-slate-700 p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -408,7 +472,7 @@ const FullScreenModal = ({ modalData, onClose }) => {
           </div>
         </div>
 
-        {/* Meeting Details Table - same container structure as DataForm */}
+        {/* Meeting Details Table */}
         <div className="bg-slate-900 rounded-lg border border-slate-700 p-6">
           <h2 className="text-xl font-semibold text-white mb-6">Attendee Details</h2>
           
@@ -444,7 +508,7 @@ const FullScreenModal = ({ modalData, onClose }) => {
             </div>
           </div>
 
-          {/* Data Table */}
+          {/* Data Table with column filters for ALL columns */}
           <div className="border border-slate-700 rounded-lg overflow-hidden bg-slate-800">
             <table className="w-full">
               <thead className="bg-orange-500">
@@ -458,9 +522,8 @@ const FullScreenModal = ({ modalData, onClose }) => {
                     </th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {/* Column filters row */}
+                
+                {/* Column filters row - EVERY column gets search */}
                 <tr className="bg-slate-800">
                   {modalData.columns.map((column, index) => (
                     <td key={`filter-${column.key}`} className={`px-4 py-2 ${
@@ -468,7 +531,7 @@ const FullScreenModal = ({ modalData, onClose }) => {
                     }`}>
                       <input
                         type="text"
-                        placeholder="Search"
+                        placeholder={`Search ${column.label}`}
                         className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-xs"
                         value={filterValues[column.key] || ''}
                         onChange={(e) => handleFilterChange(column.key, e.target.value)}
@@ -476,7 +539,8 @@ const FullScreenModal = ({ modalData, onClose }) => {
                     </td>
                   ))}
                 </tr>
-                
+              </thead>
+              <tbody>
                 {/* Data rows */}
                 {paginatedData.length > 0 ? (
                   paginatedData.map((item, rowIndex) => (

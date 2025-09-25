@@ -8,15 +8,14 @@ import {
   UserPlus, Star, Globe, Share, Cog
 } from 'lucide-react';
 
-// Import the components - adjust path based on your file structure
+// Import the components
 import { DataTable, DataForm } from '../components/DataTable';
 import { businessSections, BusinessSectionManager } from '../config/businessSections';
 import { ConnectionsComponent, TestimonialsComponent } from '../components/ConnectionsTestimonialsComponents';
-// Add this import at the top with your other imports
-import MyFeedComponent from '../components/MyFeed'; // Adjust path as needed
+import MyFeedComponent from '../components/MyFeed';
+import BusinessOpportunityReceived from '../components/BussinessOpertunityReceived';
 import {
   useP2PData,
-  useBusinessOpportunitiesReceivedData,
   useBusinessOpportunitiesGivenData,
   useBusinessClosedData,
   useMeetingsData,
@@ -27,15 +26,10 @@ import {
 } from '../config/BusinessData';
 
 const Home = () => {
-  // Get URL parameters - ADD DEBUG LOGGING
+  // Get URL parameters
   const { tab = 'dashboard', section, view = 'table' } = useParams();
   const navigate = useNavigate();
   
-  // Debug: Log route parameters
-  useEffect(() => {
-    console.log('Route params changed:', { tab, section, view });
-  }, [tab, section, view]);
-
   // UI state
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [user, setUser] = useState(null);
@@ -45,9 +39,8 @@ const Home = () => {
   const [showBusinessClosedForm, setShowBusinessClosedForm] = useState(false);
   const [businessClosedSourceItem, setBusinessClosedSourceItem] = useState(null);
 
-  // *** CRITICAL FIX: Call ALL hooks at the top level, always in the same order ***
+  // Call hooks for all sections except business-opportunity-received (now separate)
   const p2pData = useP2PData();
-  const businessOpportunitiesReceivedData = useBusinessOpportunitiesReceivedData();
   const businessOpportunitiesGivenData = useBusinessOpportunitiesGivenData();
   const businessClosedData = useBusinessClosedData();
   const meetingsData = useMeetingsData();
@@ -84,6 +77,11 @@ const Home = () => {
     setSelectedItem(null);
     setShowBusinessClosedForm(false);
     setBusinessClosedSourceItem(null);
+    // Clear editing state when section changes
+    const sectionData = getSectionData(section);
+    if (sectionData && sectionData.cancelEdit) {
+      sectionData.cancelEdit();
+    }
   }, [section]);
 
   // Add global handler for business closed
@@ -91,7 +89,6 @@ const Home = () => {
     window.handleAddBusinessClosed = (sourceItem) => {
       setBusinessClosedSourceItem(sourceItem);
       setShowBusinessClosedForm(true);
-      // Navigate to business-closed section to ensure proper routing
       navigate('/home/business/business-closed');
     };
     
@@ -152,8 +149,12 @@ const Home = () => {
     setBusinessClosedSourceItem(null);
   };
 
-  // Business section handlers
+  // Business section handlers (for non-separated components)
   const handleAddNew = () => {
+    const sectionData = getSectionData(section);
+    if (sectionData && sectionData.cancelEdit) {
+      sectionData.cancelEdit();
+    }
     navigate(`/home/business/${section}/form`);
     setSelectedItem(null);
     setShowBusinessClosedForm(false);
@@ -161,10 +162,19 @@ const Home = () => {
   };
 
   const handleEdit = (item) => {
-    setSelectedItem(item);
-    navigate(`/home/business/${section}/form`);
-    setShowBusinessClosedForm(false);
-    setBusinessClosedSourceItem(null);
+    console.log('Edit clicked for item:', item);
+    const sectionData = getSectionData(section);
+    
+    if (sectionData && sectionData.startEdit) {
+      sectionData.startEdit(item);
+      console.log('Edit state set, navigating to form...');
+      navigate(`/home/business/${section}/form`);
+      setSelectedItem(null);
+      setShowBusinessClosedForm(false);
+      setBusinessClosedSourceItem(null);
+    } else {
+      console.error('startEdit function not available for section:', section);
+    }
   };
 
   const handleView = (item) => {
@@ -178,7 +188,6 @@ const Home = () => {
         const sectionData = getSectionData(section);
         await sectionData.deleteItem(item.id);
         console.log('Item deleted successfully');
-        // Refresh data
         setDataUpdateTrigger(prev => prev + 1);
       } catch (error) {
         console.error('Error deleting item:', error);
@@ -190,20 +199,21 @@ const Home = () => {
   const handleFormSubmit = async (formData) => {
     try {
       const sectionData = getSectionData(section);
-      
-      if (selectedItem) {
-        // Update existing item using API hook
-        await sectionData.updateItem(selectedItem.id, formData);
+
+      if (sectionData.editingId) {
+        console.log('Updating item with ID:', sectionData.editingId);
+        console.log('Form data:', formData);
+        await sectionData.saveEdit(formData);
+        console.log('Item updated successfully');
       } else {
-        // Add new item using API hook
+        console.log('Adding new item with data:', formData);
         await sectionData.addItem(formData);
+        console.log('Item added successfully');
       }
-      
+
       navigate(`/home/business/${section}`);
-      setSelectedItem(null);
-      // Refresh data
       setDataUpdateTrigger(prev => prev + 1);
-      console.log('Form submitted successfully');
+      
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Error submitting form. Please try again.');
@@ -211,6 +221,11 @@ const Home = () => {
   };
 
   const handleFormCancel = () => {
+    const sectionData = getSectionData(section);
+    if (sectionData && sectionData.cancelEdit) {
+      sectionData.cancelEdit();
+    }
+    
     navigate(`/home/business/${section}`);
     setSelectedItem(null);
   };
@@ -236,13 +251,11 @@ const Home = () => {
     return BusinessSectionManager.getSectionConfig(section);
   };
 
-  // Helper function to get the correct data based on section
+  // Helper function to get the correct data based on section (excluding business-opportunity-received)
   const getSectionData = (sectionId) => {
     switch (sectionId) {
       case 'p2p':
         return p2pData;
-      case 'business-opportunity-received':
-        return businessOpportunitiesReceivedData;
       case 'business-opportunity-given':
         return businessOpportunitiesGivenData;
       case 'business-closed':
@@ -258,11 +271,6 @@ const Home = () => {
       default:
         return { data: [], loading: false, error: null };
     }
-  };
-
-  // FIXED: Improved form detection logic
-  const shouldShowForm = () => {
-    return view === 'form' || showBusinessClosedForm;
   };
 
   const renderDataSection = (sectionId) => {
@@ -298,7 +306,6 @@ const Home = () => {
       );
     }
 
-    // If we have data and section config, render the DataTable
     if (sectionConfig && sectionConfig.tableConfig) {
       return (
         <DataTable
@@ -321,7 +328,6 @@ const Home = () => {
       );
     }
 
-    // Fallback if no section config
     return (
       <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
         <div className="text-center">
@@ -339,10 +345,12 @@ const Home = () => {
     );
   };
 
-  // FIXED: Simplified and improved business content rendering
   const renderBusinessContent = () => {
     // Handle specific business sections with custom components first
     switch (section) {
+      case 'business-opportunity-received':
+        // Use the separate component
+        return <BusinessOpportunityReceived />;
       case 'connections':
         return <ConnectionsComponent />;
       case 'testimonials':
@@ -381,15 +389,16 @@ const Home = () => {
             setBusinessClosedSourceItem(null);
             navigate(`/home/business/${section}`);
           }}
-          submitText="Add Business Closed"
-          cancelText="Cancel"
+          submitText={businessClosedConfig.formConfig.submitText}
+          cancelText={businessClosedConfig.formConfig.cancelText}
         />
       );
     }
 
-    // Handle regular form views (URL-based)
-    if (view === 'form' && section) {
+    // Handle regular form views (URL-based) for other sections
+    if (view === 'form' && section && section !== 'business-opportunity-received') {
       const sectionConfig = getCurrentSectionConfig();
+      const sectionData = getSectionData(section);
       
       if (!sectionConfig || !sectionConfig.formConfig) {
         return (
@@ -415,24 +424,28 @@ const Home = () => {
         );
       }
 
+      const isEditing = !!sectionData.editingId;
+      console.log('Rendering form. Is editing:', isEditing);
+      console.log('Edit form data:', sectionData.editForm);
+
       return (
         <DataForm
-          title={selectedItem ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
+          title={isEditing ? `Edit ${sectionConfig.title}` : sectionConfig.formConfig.title}
           fields={sectionConfig.formConfig.fields}
           editFields={sectionConfig.formConfig.editFields}
-          initialData={selectedItem || {}}
+          initialData={isEditing ? sectionData.editForm : {}}
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
-          submitText={selectedItem ? 'Update' : sectionConfig.formConfig.submitText}
+          submitText={isEditing ? 'Update' : sectionConfig.formConfig.submitText}
           cancelText={sectionConfig.formConfig.cancelText}
-          isEdit={!!selectedItem}
+          isEdit={isEditing}
         />
       );
     }
 
-    // Handle data table views for specific sections
+    // Handle data table views for specific sections (excluding business-opportunity-received)
     const dataSections = [
-      'p2p', 'business-opportunity-received', 'business-opportunity-given', 
+      'p2p', 'business-opportunity-given', 
       'business-closed', 'meetings', 'visitors', 'one-to-many', 'upcoming-events'
     ];
 
@@ -471,13 +484,13 @@ const Home = () => {
     if (tab === 'business' && section) {
       const sectionConfig = getCurrentSectionConfig();
       
-      // Custom messages for specific sections
       const sectionMessages = {
         'connections': "Build and manage your professional network connections.",
         'testimonials': "Showcase and manage testimonials from your network.",
         'p2p': "Manage peer-to-peer business opportunities.",
         'meetings': "Schedule and track your business meetings.",
-        'visitors': "Welcome and track your business visitors."
+        'visitors': "Welcome and track your business visitors.",
+        'business-opportunity-received': "Manage received business opportunities."
       };
       
       return sectionMessages[section] || 
@@ -497,7 +510,6 @@ const Home = () => {
   };
 
   const renderMainContent = () => {
-    // If a business section is selected or business closed form is shown, show the business content
     if (tab === 'business' && (section || showBusinessClosedForm)) {
       return renderBusinessContent();
     }
@@ -545,7 +557,7 @@ const Home = () => {
               <div className="text-6xl text-slate-700 mb-4 flex justify-center">
                 <Heart />
               </div>
-              <h2 className="text-2xl font-semibent text-slate-500 mb-2">
+              <h2 className="text-2xl font-semibold text-slate-500 mb-2">
                 Social Network
               </h2>
               <p className="text-slate-600">
@@ -590,7 +602,6 @@ const Home = () => {
         );
       
       default:
-        // Default welcome screen
         return (
           <div className="bg-slate-950 h-full min-h-[600px] flex items-center justify-center">
             <div className="text-center">
@@ -619,7 +630,6 @@ const Home = () => {
     }
   };
 
-  // Show loading if user data is not loaded yet
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
@@ -711,65 +721,117 @@ const Home = () => {
       </div>
 
       {/* Navigation Bar */}
-  <div className="relative dropdown-container bg-gradient-to-b from-gray-950 border-t-white/20 border-t-[.1px] to-gray-900 flex items-center justify-around">
-  {navigationTabs.map((tabItem) => {
-    const isActiveTab = tab === tabItem.id || (tabItem.id === 'business' && activeDropdown === 'business');
+      <div className="relative dropdown-container bg-gradient-to-b from-gray-950 border-t-white/20 border-t-[.1px] to-gray-900 flex items-center justify-around">
+        {navigationTabs.map((tabItem) => {
+          const isActiveTab = tab === tabItem.id || (tabItem.id === 'business' && tab === 'business');
+const IconComponent = tabItem.icon;
 
-    return (
-      <div key={tabItem.id} className="flex-1 relative"> {/* Make this relative */}
-        <button
-          onClick={() => handleTabClick(tabItem.id)}
-          className={`w-full px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
-            isActiveTab
-              ? 'text-orange-400'
-              : 'text-gray-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <span>{tabItem.label}</span>
-          {tabItem.id === 'business' && (
-            <ChevronDown
-              className={`text-xs w-3 h-3 transition-transform ${
-                activeDropdown === 'business' ? 'rotate-180' : ''
-              } ${isActiveTab ? 'text-orange-400' : 'text-gray-400'}`}
-            />
-          )}
-        </button>
+return (
+  <div key={tabItem.id} className="relative">
+    <button
+      onClick={() => handleTabClick(tabItem.id)}
+      className={`flex items-center space-x-2 px-6 py-4 transition-all duration-200 ${
+        isActiveTab 
+          ? 'text-orange-500 border-b-2 border-orange-500' 
+          : 'text-gray-400 hover:text-gray-300'
+      }`}
+    >
+      <IconComponent className="w-5 h-5" />
+      <span className="font-medium">{tabItem.label}</span>
+      {tabItem.id === 'business' && (
+        <ChevronDown className={`w-4 h-4 transition-transform ${
+          activeDropdown === 'business' ? 'rotate-180' : ''
+        }`} />
+      )}
+    </button>
 
-        {/* Business Dropdown Menu */}
-        {tabItem.id === 'business' && activeDropdown === 'business' && (
-          <div className="absolute top-full left-0 w-70 bg-gray-600 border border-slate-700 rounded-lg shadow-2xl z-50 mt-1">
-            {businessSubmenu.map((item) => {
-              const isActive = section === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleSubmenuClick(item.id)}
-                  className={`w-full px-4 py-2 flex items-center space-x-3 text-left transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
-                    isActive
-                      ? 'text-orange-400'
-                      : 'text-gray-100 hover:text-white hover:bg-slate-700'
-                  }`}
-                >
-                
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  })}
-</div>
-
-
-
-      {/* Main Content Area - FIXED: Ensure proper height and rendering */}
-      <div className="flex-1 min-h-[calc(100vh-140px)]">
-        {renderMainContent()}
+    {/* Business Dropdown Menu */}
+  {tabItem.id === 'business' && activeDropdown === 'business' && (
+  <div className="absolute top-full left-0 mt-1 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-40">
+    <div className="p-4">
+      
+      <div className="space-y-2">
+        {businessSubmenu.map((subItem) => {
+          const SubIcon = subItem.icon;
+          const isActiveSubmenu = section === subItem.id;
+          
+          return (
+            <button
+              key={subItem.id}
+              onClick={() => handleSubmenuClick(subItem.id)}
+              className={`flex  items-center space-x-3 px-3 py-1 rounded-lg transition-colors w-full ${
+                isActiveSubmenu
+                  ? 'bg-gray-500/20  text-gray-400'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+              }`}
+            >
+              <span className="text-sm font-medium text-left">{subItem.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
-  );
+  </div>
+)}
+  </div>
+);
+})}
+</div>
+
+{/* Main Content Area */}
+<div className="flex-1 px-6">
+ 
+
+  {/* Content */}
+  {renderMainContent()}
+</div>
+
+{/* Selected Item Modal */}
+{selectedItem && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-white">Item Details</h3>
+          <button 
+            onClick={() => setSelectedItem(null)}
+            className="text-gray-400 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
+        <div className="space-y-4">
+          {Object.entries(selectedItem).map(([key, value]) => (
+            <div key={key} className="flex">
+              <span className="font-medium text-gray-300 w-32 capitalize">
+                {key.replace(/([A-Z])/g, ' $1').trim()}:
+              </span>
+              <span className="text-white flex-1">
+                {value || '-'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end space-x-3 mt-6">
+          <button
+            onClick={() => handleEdit(selectedItem)}
+            className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setSelectedItem(null)}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+</div>
+);
 };
 
 export default Home;

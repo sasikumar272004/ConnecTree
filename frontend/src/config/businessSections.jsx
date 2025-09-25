@@ -111,6 +111,8 @@ export const useBusinessData = (sectionId) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -162,13 +164,41 @@ export const useBusinessData = (sectionId) => {
     }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const saveEdit = async (formData) => {
+    if (!editingId) return;
+
+    try {
+      await updateItem(editingId, formData);
+      setEditingId(null);
+      setEditForm({});
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
   return {
     data,
     loading,
     error,
+    editingId,
+    editForm,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    startEdit,
+    saveEdit,
+    cancelEdit
   };
 };
 
@@ -190,7 +220,7 @@ export const businessSections = {
             <span className={`px-2 py-1 rounded text-xs ${
               value === 'Completed' ? ' text-gray-300' : 
               value === 'Scheduled' ? ' text-gray-300' : 
-              'bg-yellow-600 text-gray-300'
+              ' text-gray-300'
             }`}>
               {value}
             </span>
@@ -260,101 +290,7 @@ export const businessSections = {
 
   },
 
-  'business-opportunity-received': {
-    title: 'Business Opportunity Received',
-    tableConfig: {
-      columns: [
-        { key: 'referralName', label: 'Referral Name', sortable: true },
-        { key: 'email', label: 'Email', sortable: true },
-        { key: 'phone', label: 'Phone', sortable: true },
-        { key: 'date', label: 'Date', sortable: true },
-        { 
-          key: 'status', 
-          label: 'Status', 
-          sortable: true,
-          render: (value) => (
-            <span className={`px-2 py-1 rounded text-xs ${
-              value === 'Closed' ? ' text-gray-300' : 
-              value === 'In Progress' ? ' text-gray-300' : 
-              value === 'New' ? ' text-gray-300' :
-              'bg-gray-600 text-gray-300'
-            }`}>
-              {value}
-            </span>
-          )
-        },
-        { 
-          key: 'businessClosed', 
-          label: 'Business Closed', 
-          sortable: true,
-          render: (value, item) => (
-            <div className="flex items-center space-x-2">
-              <span>{value}</span>
-              <button
-                onClick={() => window.handleAddBusinessClosed && window.handleAddBusinessClosed(item)}
-                className="bg-green-600 hover:bg-green-700 text-gray-300 px-2 py-1 rounded text-xs transition-colors"
-              >
-                Add Business Closed
-              </button>
-            </div>
-          )
-        }
-      ],
-      filters: [
-        { key: 'startDate', label: 'Start Date', type: 'date' },
-        { key: 'endDate', label: 'End Date', type: 'date' }
-      ],
-      searchPlaceholder: 'Search opportunities...',
-      showExportPrint: false,
-      showAddButton: false
-    },
-    formConfig: {
-      title: 'Add Business Opportunity Received',
-      fields: [
-        {
-          key: 'referralName',
-          label: 'Referral Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter referral name'
-        },
-        {
-          key: 'email',
-          label: 'Email',
-          type: 'email',
-          required: true,
-          placeholder: 'Enter email address'
-        },
-        {
-          key: 'phone',
-          label: 'Phone',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter phone number'
-        },
-        {
-          key: 'date',
-          label: 'Date',
-          type: 'date',
-          required: true
-        },
-        {
-          key: 'businessClosed',
-          label: 'Business Closed',
-          type: 'select',
-          required: false,
-          placeholder: 'Select status',
-          options: [
-            { value: 'yes', label: 'Yes' },
-            { value: 'no', label: 'No' }
-          ]
-        }
-      ],
-      submitText: 'Submit',
-      cancelText: 'Cancel'
-    },
-
-  },
+ 
 
   'business-opportunity-given': {
     title: 'Business Opportunity Given',
@@ -628,178 +564,7 @@ export const businessSections = {
       showExportPrint: false,
       showAddButton: false
     },
-    data: [
-      {
-        id: 1,
-        meetingDate: '2025-09-25',
-        enteredBy: 'David Smith',
-        enteredDate: '2025-09-20',
-        status: 'Scheduled',
-        details: [
-          {
-            id: 1,
-            firstName: 'John',
-            lastName: 'Anderson',
-            palms: '5',
-            rgi: '3',
-            rgo: '2',
-            pri: '4',
-            rro: '1',
-            visitors: '2',
-            oneToOne: '3',
-            tqGiven: '7',
-            testimonials: '2'
-          },
-          {
-            id: 2,
-            firstName: 'Sarah',
-            lastName: 'Wilson',
-            palms: '8',
-            rgi: '6',
-            rgo: '4',
-            pri: '3',
-            rro: '2',
-            visitors: '1',
-            oneToOne: '5',
-            tqGiven: '9',
-            testimonials: '3'
-          },
-          {
-            id: 3,
-            firstName: 'Michael',
-            lastName: 'Chen',
-            palms: '12',
-            rgi: '8',
-            rgo: '6',
-            pri: '7',
-            rro: '3',
-            visitors: '4',
-            oneToOne: '8',
-            tqGiven: '15',
-            testimonials: '5'
-          }
-        ]
-      },
-      {
-        id: 2,
-        meetingDate: '2025-09-18',
-        enteredBy: 'Phillips Johnson',
-        enteredDate: '2025-09-15',
-        status: 'Completed',
-        details: [
-          {
-            id: 1,
-            firstName: 'Emily',
-            lastName: 'Rodriguez',
-            palms: '6',
-            rgi: '4',
-            rgo: '3',
-            pri: '2',
-            rro: '1',
-            visitors: '1',
-            oneToOne: '4',
-            tqGiven: '8',
-            testimonials: '2'
-          },
-          {
-            id: 2,
-            firstName: 'David',
-            lastName: 'Thompson',
-            palms: '10',
-            rgi: '7',
-            rgo: '5',
-            pri: '6',
-            rro: '4',
-            visitors: '3',
-            oneToOne: '6',
-            tqGiven: '12',
-            testimonials: '4'
-          }
-        ]
-      },
-      {
-        id: 3,
-        meetingDate: '2025-09-30',
-        enteredBy: 'Mike Williams',
-        enteredDate: '2025-09-22',
-        status: 'Scheduled',
-        details: [
-          {
-            id: 1,
-            firstName: 'Alice',
-            lastName: 'Johnson',
-            palms: '4',
-            rgi: '2',
-            rgo: '1',
-            pri: '3',
-            rro: '0',
-            visitors: '1',
-            oneToOne: '2',
-            tqGiven: '5',
-            testimonials: '1'
-          },
-          {
-            id: 2,
-            firstName: 'Robert',
-            lastName: 'Brown',
-            palms: '9',
-            rgi: '6',
-            rgo: '4',
-            pri: '5',
-            rro: '3',
-            visitors: '2',
-            oneToOne: '7',
-            tqGiven: '11',
-            testimonials: '3'
-          },
-          {
-            id: 3,
-            firstName: 'Lisa',
-            lastName: 'Davis',
-            palms: '7',
-            rgi: '5',
-            rgo: '3',
-            pri: '4',
-            rro: '2',
-            visitors: '1',
-            oneToOne: '5',
-            tqGiven: '9',
-            testimonials: '2'
-          }
-        ]
-      },
-      {
-        id: 4,
-        meetingDate: '2025-09-12',
-        enteredBy: 'David Smith',
-        enteredDate: '2025-09-10',
-        status: 'Cancelled',
-        details: []
-      },
-      {
-        id: 5,
-        meetingDate: '2025-09-28',
-        enteredBy: 'Phillips Johnson',
-        enteredDate: '2025-09-23',
-        status: 'Scheduled',
-        details: [
-          {
-            id: 1,
-            firstName: 'Mark',
-            lastName: 'Wilson',
-            palms: '11',
-            rgi: '8',
-            rgo: '6',
-            pri: '7',
-            rro: '4',
-            visitors: '3',
-            oneToOne: '9',
-            tqGiven: '14',
-            testimonials: '4'
-          }
-        ]
-      }
-    ]
+   
   },
 
   'connections': {
