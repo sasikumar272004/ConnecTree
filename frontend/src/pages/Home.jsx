@@ -12,7 +12,7 @@ import {
 import { DataTable, DataForm } from '../components/DataTable';
 import { businessSections, BusinessSectionManager } from '../config/businessSections';
 import { ConnectionsComponent, TestimonialsComponent } from '../components/ConnectionsTestimonialsComponents';
-import MyFeedComponent from '../components/MyFeed';
+import MyFeedComponent from '../components/MyFeed/MyFeed';
 import BusinessOpportunityReceived from '../components/BussinessOpertunityReceived';
 import {
   useP2PData,

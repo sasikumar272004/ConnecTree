@@ -287,7 +287,8 @@ const DataTable = ({
       </div>
 
       {/* Table */}
-      <div className="relative rounded-2xl p-[2px] border-2 border-slate-100/80">
+      <div className=" rounded-2xl p-[2px] bg-gradient-to-br from-gray-300 via-gray-600/30 to-gray-700">
+      <div className="relative rounded-2xl p-[2px]  bg-gray-900">
         <div className="flex items-center p-3 justify-between mb-4">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-slate-400">Show</span>
@@ -414,6 +415,7 @@ const DataTable = ({
             </tbody>
           </table>
         </div>
+      </div>
       </div>
 
       {/* Pagination */}

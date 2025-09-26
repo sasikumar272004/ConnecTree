@@ -140,15 +140,21 @@ export const useP2PData = () => {
   }, []);
 
   const addItem = async (itemData) => {
-    try {
-      const newItem = await businessDataService.createData('p2p', itemData);
-      setData(prev => [...prev, newItem]);
-      return newItem;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
+  try {
+    // Add date automatically (ISO format or any format you want)
+    const newItemData = {
+      ...itemData,
+      date: new Date().toISOString().split("T")[0], // e.g., "2025-09-26"
+    };
+
+    const newItem = await businessDataService.createData('p2p', newItemData);
+    setData(prev => [...prev, newItem]);
+    return newItem;
+  } catch (err) {
+    setError(err.message);
+    throw err;
+  }
+};
 
   const updateItem = async (id, updateData) => {
     try {
@@ -330,16 +336,27 @@ export const useBusinessOpportunitiesGivenData = () => {
     fetchData();
   }, []);
 
-  const addItem = async (itemData) => {
-    try {
-      const newItem = await businessDataService.createData('business-opportunity-given', itemData);
-      setData(prev => [...prev, newItem]);
-      return newItem;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
+ const addItem = async (itemData) => {
+  try {
+    // Attach date automatically (ISO string or readable format)
+    const newItemData = {
+      ...itemData,
+      date: new Date().toISOString().split("T")[0], // e.g. "2025-09-26"
+    };
+
+    const newItem = await businessDataService.createData(
+      'business-opportunity-given',
+      newItemData
+    );
+
+    setData(prev => [...prev, newItem]);
+    return newItem;
+  } catch (err) {
+    setError(err.message);
+    throw err;
+  }
+};
+
 
   const updateItem = async (id, updateData) => {
     try {
@@ -425,16 +442,26 @@ export const useBusinessClosedData = () => {
     fetchData();
   }, []);
 
-  const addItem = async (itemData) => {
-    try {
-      const newItem = await businessDataService.createData('business-closed', itemData);
-      setData(prev => [...prev, newItem]);
-      return newItem;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
+ const addItem = async (itemData) => {
+  try {
+    // Attach date automatically (ISO string or readable format)
+    const newItemData = {
+      ...itemData,
+      date: new Date().toISOString().split("T")[0], // e.g. "2025-09-26"
+    };
+
+    const newItem = await businessDataService.createData(
+      'business-opportunity-given',
+      newItemData
+    );
+
+    setData(prev => [...prev, newItem]);
+    return newItem;
+  } catch (err) {
+    setError(err.message);
+    throw err;
+  }
+};
 
   const updateItem = async (id, updateData) => {
     try {

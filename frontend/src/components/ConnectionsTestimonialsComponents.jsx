@@ -29,11 +29,7 @@ import { useConnectionsData, useTestimonialsData } from '../config/ConnectionsTe
 const Avatar = ({ src, name, size = 'md' }) => {
   const [imageError, setImageError] = useState(false);
   
-  const sizeClasses = {
-    sm: 'w-10 h-10',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16'
-  };
+ 
 
   const textSizes = {
     sm: 'text-sm',
@@ -43,14 +39,14 @@ const Avatar = ({ src, name, size = 'md' }) => {
 
   if (imageError || !src) {
     return (
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-orange-500 to-orange-700 rounded-full flex items-center justify-center text-white font-semibold ${textSizes[size]} flex-shrink-0 shadow-md`}>
+      <div className={` h-28 w-[30%] bg-gradient-to-br from-orange-500 to-orange-700  flex items-center justify-center text-white font-semibold ${textSizes[size]} flex-shrink-0 shadow-md`}>
         {name?.charAt(0)?.toUpperCase() || '?'}
       </div>
     );
   }
 
   return (
-    <div className={`${sizeClasses[size]} bg-slate-700 rounded-full flex-shrink-0 overflow-hidden shadow-md ring-2 ring-slate-800`}>
+    <div className={` bg-slate-700 rounded-full flex-shrink-0 overflow-hidden shadow-md ring-2 ring-slate-800`}>
       <img
         src={src}
         alt={name}
@@ -64,16 +60,16 @@ const Avatar = ({ src, name, size = 'md' }) => {
 // Stats Card Component
 const StatsCard = ({ title, value, icon: Icon, isHighlighted = false, hasIndicator = false, onClick, isActive = false }) => (
   <div 
-    className={`${isActive ? 'bg-gradient-to-r from-orange-600 to-orange-700' : 'bg-slate-900 border border-slate-800'} rounded-lg p-4 text-white relative overflow-hidden transition-all hover:scale-[1.02] shadow-lg cursor-pointer`}
+    className={`${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-500' : 'bg-gray-900 border border-orange-400'} rounded-lg p-4 text-white relative overflow-hidden transition-all hover:scale-[1.02] shadow-lg cursor-pointer`}
     onClick={onClick}
   >
     <div className="flex items-center justify-between">
-      <div>
-        <h3 className="text-sm font-medium mb-1 opacity-80">{title}</h3>
-        <div className="text-2xl font-bold">{typeof value === 'number' ? value.toString().padStart(2, '0') : value}</div>
+      <div className='py-1'>
+        <h3 className="text-2xl font-medium mb-1 opacity-80">{title}</h3>
+        <div className="text-3xl font-bold">{typeof value === 'number' ? value.toString().padStart(2, '0') : value}</div>
       </div>
-      <div className={`${isActive ? 'text-white/20' : 'text-white/15'}`}>
-        <Icon className="w-8 h-8" />
+      <div className={`${isActive ? 'text-white/50' : 'text-white/30'}`}>
+        <Icon className="w-8 text-amber-50 h-8" />
       </div>
     </div>
     {hasIndicator && (
@@ -121,7 +117,6 @@ const PageHeader = ({ breadcrumb, title }) => (
       <span>›</span>
       <span className="text-orange-500 font-medium">{breadcrumb}</span>
     </div>
-    <h1 className="text-2xl font-bold text-white">{title}</h1>
   </div>
 );
 
@@ -130,18 +125,12 @@ const ActionButtons = ({ onSearch, onPrimaryAction, searchText = "Search", prima
   <div className="flex gap-2">
     <button
       onClick={onSearch}
-      className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm border border-slate-700"
+      className="bg-orange-500 hover:bg-slate-700 text-white px-10 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm border border-slate-700"
     >
       <Search className="w-3 h-3" />
       {searchText}
     </button>
-    <button
-      onClick={onPrimaryAction}
-      className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 text-sm shadow-lg"
-    >
-      <PrimaryIcon className="w-3 h-3" />
-      {primaryText}
-    </button>
+   
   </div>
 );
 
@@ -164,28 +153,28 @@ const EmptyState = ({ icon: Icon, message }) => (
 
 // Connection Card Component
 const ConnectionCard = ({ connection, onViewProfile, onSendMessage }) => (
-  <div className="bg-slate-900 rounded-lg border border-slate-800 p-4 hover:border-slate-700 transition-all hover:shadow-lg hover:bg-slate-800/50">
+   <div className="relative max-w-4xl w-full rounded-2xl p-[1px] bg-gradient-to-br from-gray-200 via-gray-700 to-gray-800">
+  <div className="bg-slate-900 border rounded-2xl overflow-hidden border-slate-800 hover:border-slate-700 transition-all hover:shadow-lg hover:bg-slate-800/50">
     <div className="flex items-start gap-3">
       <Avatar src={connection.avatar} name={connection.name} size="md" />
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 py-2 min-w-0">
         <h3 className="text-white font-semibold text-base mb-1 truncate">{connection.name}</h3>
         <p className="text-slate-400 text-xs mb-1 line-clamp-2">{connection.title}</p>
         <p className="text-orange-500 text-xs font-medium mb-1">{connection.company}</p>
-        <p className="text-slate-600 text-xs mb-3">{connection.location}</p>
         {connection.requestDate && (
           <p className="text-slate-600 text-xs mb-3">Request: {connection.requestDate}</p>
         )}
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 content-start pr-5">
           <button
             onClick={() => onViewProfile(connection.id)}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1 flex-1 justify-center border border-slate-700"
+            className="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1 flex-1 justify-center border border-orange-500"
           >
             <Eye className="w-3 h-3" />
             View
           </button>
           <button
             onClick={() => onSendMessage(connection.id)}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1 flex-1 justify-center"
+            className="bg-gray-500 text-white px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1 flex-1 justify-center"
           >
             <MessageCircle className="w-3 h-3" />
             {connection.status === 'pending-sent' ? 'Cancel' : 
@@ -195,54 +184,42 @@ const ConnectionCard = ({ connection, onViewProfile, onSendMessage }) => (
       </div>
     </div>
   </div>
+</div>
 );
 
 // Testimonial Card Component
-const TestimonialCard = ({ testimonial, onShare, onThank }) => (
-  <div className="bg-slate-900 rounded-lg border border-slate-800 p-4 hover:border-slate-700 transition-all hover:shadow-lg hover:bg-slate-800/50">
-    <div className="flex flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <Avatar src={testimonial.avatar} name={testimonial.name} size="md" />
-        <div className="flex-1">
-          <h3 className="text-white font-semibold text-base mb-1">{testimonial.name}</h3>
-          <p className="text-slate-400 text-xs mb-0.5">{testimonial.role}</p>
-          <p className="text-orange-500 text-xs font-medium">{testimonial.company}</p>
-        </div>
-      </div>
+const TestimonialCard = ({ testimonial }) => (
+  <div className="bg-gradient-to-br from-slate-900 to-gray-800 rounded-2xl border mt-7 border-slate-800 p-6 text-center hover:border-slate-700 transition-all hover:shadow-lg hover:bg-slate-800/50 relative">
 
-      {/* Rating and Date */}
-      <div className="flex items-center justify-between mb-3">
-        <StarRating rating={testimonial.rating} />
-        <span className="text-slate-600 text-xs">{testimonial.date}</span>
-      </div>
+   {/* Avatar (Name as Circle) */}
+<div className="flex justify-center -mt-14 px-5">
+  <div className="w-30 h-30 flex items-center justify-center rounded-full bg-gradient-to-br from-slate-900   to-gray-800 text-white text-xl font-bold ">
+<div className='bg-amber-600 w-22 h-22 rounded-full flex items-center justify-center'>
+      {testimonial.name.charAt(0)} {/* or full name if you want */}
 
-      {/* Testimonial Content */}
-      <div className="relative mb-4">
-        <Quote className="text-orange-500/20 w-6 h-6 mb-2" />
-        <p className="text-slate-300 text-xs leading-relaxed italic pl-3 border-l-2 border-orange-500/20">
-          {testimonial.testimonial}
-        </p>
-      </div>
+</div>
+  </div>
+</div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-slate-800">
-        <button 
-          onClick={() => onShare(testimonial.id)}
-          className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-xs transition-colors flex-1 border border-slate-700"
-        >
-          Share
-        </button>
-        <button 
-          onClick={() => onThank(testimonial.id)}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded text-xs transition-colors flex-1"
-        >
-          Thank
-        </button>
-      </div>
+{/* Name below */}
+<h3 className="text-orange-500 font-semibold text-xl  text-center">
+  {testimonial.name}
+</h3>
+
+
+    {/* Name */}
+
+    {/* Testimonial */}
+    <div className="relative mt-3">
+      <span className="absolute -left-2 -top-2 text-orange-500 text-3xl">❝</span>
+      <p className="text-slate-300 text-sm  leading-relaxed italic px-6">
+        {testimonial.testimonial}
+      </p>
+      <span className="absolute -right-2 -bottom-2 text-orange-500 text-3xl">❞</span>
     </div>
   </div>
 );
+
 
 // Connections Component
 export const ConnectionsComponent = () => {
@@ -322,7 +299,7 @@ export const ConnectionsComponent = () => {
   };
 
   return (
-    <div className="bg-slate-950 p-4 min-h-screen">
+    <div className="bg-slate-950 px-10 py-5 min-h-screen">
       <PageHeader breadcrumb="Connections" title="My Connections" />
 
       {/* Stats Cards Row */}
@@ -375,7 +352,7 @@ export const ConnectionsComponent = () => {
       />
 
       {/* Connections Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
         {filteredConnections.map((connection) => (
           <ConnectionCard
             key={connection.id}
@@ -528,7 +505,7 @@ export const TestimonialsComponent = () => {
       />
 
       {/* Testimonials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1  md:grid-cols-3 gap-10">
         {filteredTestimonials.map((testimonial, index) => (
           <TestimonialCard
             key={`${testimonial.id}-${index}`}
@@ -549,48 +526,3 @@ export const TestimonialsComponent = () => {
   );
 };
 
-// Demo Component to show both
-export default function ConnectionsTestimonialsDemo() {
-  const [activeTab, setActiveTab] = useState(() =>
-    getStateFromLocalStorage('connectionsDemo_activeTab', 'connections')
-  );
-
-  // Save tab state when it changes
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    saveStateToLocalStorage('connectionsDemo_activeTab', tab);
-  };
-
-  return (
-    <div>
-      {/* Tab Navigation */}
-      <div className="bg-slate-900 border-b border-slate-800">
-        <div className="flex">
-          <button
-            onClick={() => handleTabChange('connections')}
-            className={`px-4 py-3 font-medium transition-colors text-sm ${
-              activeTab === 'connections'
-                ? 'text-orange-500 border-b-2 border-orange-500 bg-slate-800'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Connections
-          </button>
-          <button
-            onClick={() => handleTabChange('testimonials')}
-            className={`px-4 py-3 font-medium transition-colors text-sm ${
-              activeTab === 'testimonials'
-                ? 'text-orange-500 border-b-2 border-orange-500 bg-slate-800'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Testimonials
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {activeTab === 'connections' ? <ConnectionsComponent /> : <TestimonialsComponent />}
-    </div>
-  );
-}
