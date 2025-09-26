@@ -658,21 +658,29 @@ const Home = () => {
           
           <div className="relative user-menu-container">
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 cursor-pointer bg-white/20 mr-5 px-3 py-2 rounded-lg transition-colors"
-            >
-              <div className="w-8 h-8  bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                </span>
-              </div>
-              <span className="font-medium text-gray-100">
-                {user?.name || 'User'}
-              </span>
-              <ChevronDown className={`text-gray-600 text-sm transition-transform ${
-                showUserMenu ? 'rotate-180' : ''
-              }`} />
-            </button>
+  onClick={() => setShowUserMenu(!showUserMenu)}
+  className="flex items-center space-x-2 cursor-pointer bg-white/20 mr-5 px-3 py-2 rounded-lg transition-colors"
+>
+  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-orange-500">
+    {user?.profilePhotoUrl ? (
+      <img 
+        src={`http://localhost:5000${user.profilePhotoUrl}`}
+        alt="Profile"
+        className="w-full h-full object-cover"
+      />
+    ) : (
+      <span className="text-white text-sm font-medium">
+        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+      </span>
+    )}
+  </div>
+  <span className="font-medium text-gray-100">
+    {user?.name || 'User'}
+  </span>
+  <ChevronDown className={`text-gray-600 text-sm transition-transform ${
+    showUserMenu ? 'rotate-180' : ''
+  }`} />
+</button>
 
             {/* User Dropdown Menu */}
             {showUserMenu && (

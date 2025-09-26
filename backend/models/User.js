@@ -152,15 +152,23 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Method to get public profile (excluding sensitive data)
+// Method to get public profile (excluding sensitive data) - FIXED VERSION
 UserSchema.methods.getPublicProfile = function () {
   const userObject = this.toObject();
+  
+  // Remove sensitive data
   delete userObject.password;
   delete userObject.gstNumber;
   delete userObject.panNumber;
   delete userObject.businessRegNumber;
   delete userObject.ipAddress;
   delete userObject.userAgent;
+  
+  // FIXED: Add profile photo URL if it exists
+  if (userObject.profilePhoto && userObject.profilePhoto.url) {
+    userObject.profilePhotoUrl = userObject.profilePhoto.url;
+  }
+  
   return userObject;
 };
 

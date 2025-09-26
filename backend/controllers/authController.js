@@ -2,22 +2,37 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Blacklist = require("../models/blacklist");
+const path = require("path");
+const fs = require("fs");
 
 // Generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
-// Register a new user - EXPANDED VERSION
+// Register a new user - UPDATED WITH IMAGE UPLOAD
+// Register a new user - COMPLETE FIXED VERSION
 exports.registerUser = async (req, res) => {
   try {
+    console.log('Registration request received');
+    console.log('File:', req.file);
+    console.log('Body keys:', Object.keys(req.body));
+
+    // Handle uploaded file - FIXED: Create proper URL
+    let profilePhotoUrl = null;
+    if (req.file) {
+      // Create proper URL that frontend can access
+      profilePhotoUrl = `/uploads/images/${req.file.filename}`;
+      console.log('Profile photo URL:', profilePhotoUrl);
+    }
+
     // Destructure all fields from request body
     const {
       // Basic Information - Required
       name, email, password, phone, gender, country, chapter, joinDate,
       
       // Basic Information - Optional
-      dateOfBirth, streetAddress, city, state, pincode, expectations, profilePhoto,
+      dateOfBirth, streetAddress, city, state, pincode, expectations,
       
       // Business Information
       businessName, sponsorName, contactRole, gstNumber, businessCategory,
@@ -45,7 +60,7 @@ exports.registerUser = async (req, res) => {
     const requiredFields = {
       name: name,
       email: email,
-      password: password,
+      password: password || "connecttree",
       phone: phone,
       gender: gender,
       country: country,
@@ -61,6 +76,10 @@ exports.registerUser = async (req, res) => {
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
+      // Clean up uploaded file if validation fails
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ 
         message: "Missing required fields", 
         missingFields: missingFields 
@@ -70,29 +89,50 @@ exports.registerUser = async (req, res) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      // Clean up uploaded file if validation fails
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "Invalid email format" });
     }
 
     // Validate password length
-    if (password.length < 6) {
+    const actualPassword = password || "connecttree";
+    if (actualPassword.length < 6) {
+      // Clean up uploaded file if validation fails
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "Password must be at least 6 characters long" });
     }
 
-    // Validate phone number format (basic validation)
+    // Validate phone number format
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
+      // Clean up uploaded file if validation fails
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "Invalid phone number format" });
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
+      // Clean up uploaded file if user exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "User already exists with this email" });
     }
 
-    // Check for duplicate phone (optional, remove if not needed)
+    // Check for duplicate phone
     const existingPhone = await User.findOne({ phone: phone });
     if (existingPhone) {
+      // Clean up uploaded file if phone exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(400).json({ message: "Phone number already registered" });
     }
 
@@ -101,7 +141,7 @@ exports.registerUser = async (req, res) => {
       // Basic Information
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: password, // Will be hashed by pre-save middleware
+      password: actualPassword,
       phone: phone.trim(),
       gender: gender,
       country: country,
@@ -115,7 +155,16 @@ exports.registerUser = async (req, res) => {
       ...(state && { state: state.trim() }),
       ...(pincode && { pincode: pincode.trim() }),
       ...(expectations && { expectations: expectations.trim() }),
-      ...(profilePhoto && { profilePhoto: profilePhoto }),
+      
+      // FIXED: Store proper profile photo structure
+      ...(profilePhotoUrl && { 
+        profilePhoto: {
+          name: req.file.originalname,
+          size: req.file.size,
+          type: req.file.mimetype,
+          url: profilePhotoUrl
+        }
+      }),
       
       // Business Information
       ...(businessName && { businessName: businessName.trim() }),
@@ -161,30 +210,42 @@ exports.registerUser = async (req, res) => {
     const user = new User(userData);
     await user.save();
 
+    console.log(`New user registered: ${email} - Chapter: ${chapter}`);
+    if (profilePhotoUrl) {
+      console.log(`Profile photo URL: ${profilePhotoUrl}`);
+    }
+
     // Generate token
     const token = generateToken(user._id);
 
-    // Return success response with public profile (excluding sensitive data)
+    // Return success response with public profile
     const publicProfile = user.getPublicProfile();
 
-    console.log(`New user registered: ${email} - Chapter: ${chapter}`);
-
+    // FIXED: Return proper response with image URL
     res.status(201).json({ 
       message: "User registered successfully",
       user: publicProfile,
       token: token,
-      completedSteps: completedSteps || [0, 1, 2, 3]
+      completedSteps: completedSteps || [0, 1, 2, 3],
+      imageUrl: profilePhotoUrl, // This will be saved to localStorage
+      success: true
     });
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Clean up uploaded file if there's an error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     
     // Handle specific mongoose validation errors
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ 
         message: "Validation failed", 
-        errors: validationErrors 
+        errors: validationErrors,
+        success: false
       });
     }
     
@@ -192,13 +253,15 @@ exports.registerUser = async (req, res) => {
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({ 
-        message: `${field} already exists` 
+        message: `${field} already exists`,
+        success: false
       });
     }
     
     res.status(500).json({ 
       message: "Registration failed. Please try again.",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      success: false
     });
   }
 };
@@ -263,7 +326,7 @@ exports.logoutUser = async (req, res) => {
   }
 };
 
-// Get user profile - ENHANCED to return full profile
+// Get user profile - ENHANCED to return full profile with image URL
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -273,6 +336,11 @@ exports.getProfile = async (req, res) => {
 
     // Return public profile (password and sensitive data excluded)
     const publicProfile = user.getPublicProfile();
+
+    // Add profile photo URL if exists
+    if (user.profilePhoto) {
+      publicProfile.profilePhotoUrl = `/uploads/images/${path.basename(user.profilePhoto)}`;
+    }
 
     res.status(200).json(publicProfile);
   } catch (error) {

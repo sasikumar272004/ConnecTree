@@ -15,7 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 const Register = () => {
   const [formData, setFormData] = useState({
     // Basic Info
-    name: "", email: "", password: "", phone: "", gender: "", dateOfBirth: "",
+    name: "", email: "", password: "connecttree", phone: "", gender: "", dateOfBirth: "",
     streetAddress: "", city: "", state: "", pincode: "", country: "",
     chapter: "", joinDate: "", expectations: "", profilePhoto: null,
     
@@ -193,7 +193,7 @@ const Register = () => {
     
     if (confirmReset) {
       const initialFormData = {
-        name: "", email: "", password: "", phone: "", gender: "", dateOfBirth: "",
+        name: "", email: "", password: "connecttree", phone: "", gender: "", dateOfBirth: "",
         streetAddress: "", city: "", state: "", pincode: "", country: "",
         chapter: "", joinDate: "", expectations: "", profilePhoto: null,
         businessName: "", sponsorName: "", contactRole: "", gstNumber: "",
@@ -225,7 +225,6 @@ const Register = () => {
       // Basic Info - Required fields
       name: { value: formData.name, label: "Full Name" },
       email: { value: formData.email, label: "Email Address" },
-      password: { value: "connecttree", label: "Password" },
       phone: { value: formData.phone, label: "Phone Number" },
       gender: { value: formData.gender, label: "Gender" },
       country: { value: formData.country, label: "Country" },
@@ -270,85 +269,68 @@ const Register = () => {
     }
 
     try {
-      // Prepare comprehensive payload with ALL form data
-      const registrationPayload = {
-        // Basic Information
-        name: formData.name || "",
-        email: formData.email || "",
-        password: formData.password || "",
-        phone: formData.phone || "",
-        gender: formData.gender || "",
-        dateOfBirth: formData.dateOfBirth || "",
-        streetAddress: formData.streetAddress || "",
-        city: formData.city || "",
-        state: formData.state || "",
-        pincode: formData.pincode || "",
-        country: formData.country || "",
-        chapter: formData.chapter || "",
-        joinDate: formData.joinDate || "",
-        expectations: formData.expectations || "",
-        profilePhoto: formData.profilePhoto ? {
-          name: formData.profilePhoto.name,
-          size: formData.profilePhoto.size,
-          type: formData.profilePhoto.type
-        } : null,
+      // Create FormData for multipart/form-data submission
+      const formDataToSend = new FormData();
 
-        // Business Information
-        businessName: formData.businessName || "",
-        sponsorName: formData.sponsorName || "",
-        contactRole: formData.contactRole || "",
-        gstNumber: formData.gstNumber || "",
-        businessCategory: formData.businessCategory || "",
-        establishedYear: formData.establishedYear || "",
-        companySize: formData.companySize || "",
-        businessRegNumber: formData.businessRegNumber || "",
-        subCategory: formData.subCategory || "",
-        headquarters: formData.headquarters || "",
-        workPreference: formData.workPreference || "",
-        panNumber: formData.panNumber || "",
-        shortDescription: formData.shortDescription || "",
+      // Add all form fields to FormData
+      Object.keys(formData).forEach(key => {
+        if (key === 'profilePhoto') {
+          if (formData.profilePhoto instanceof File) {
+            formDataToSend.append('profilePhoto', formData.profilePhoto);
+          }
+        } else if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
 
-        // Professional Information
-        professionalName: formData.profName || "",
-        role: formData.role || "",
-        professionalCategory: formData.profCategory || "",
-        professionalWorkPreference: formData.profWorkPreference || "",
-        yearsExperience: formData.yearsExperience || "",
-        skillsTechnologies: formData.skillsTech || "",
+      // Add metadata fields
+      formDataToSend.append('registrationStep', 'complete');
+if (Array.isArray(completedSteps)) {
+  // Send as individual values for array processing
+  completedSteps.forEach(step => {
+    formDataToSend.append('completedSteps', step.toString());
+  });
+} else {
+  // Fallback: ensure it's an array
+  formDataToSend.append('completedSteps', '0');
+}      formDataToSend.append('formVersion', '2.0');
+      formDataToSend.append('submittedAt', new Date().toISOString());
 
-        // Social & Hobbies Information
-        socialName: formData.socialName || "",
-        socialCategory: formData.socialCategory || "",
-        hobbies: formData.hobbies || "",
-        motivation: formData.motivation || "",
-        travelAvailable: formData.travelAvailable || "",
+      // Map frontend field names to backend expected names
+      formDataToSend.append('professionalName', formData.profName || "");
+      formDataToSend.append('professionalCategory', formData.profCategory || "");
+      formDataToSend.append('professionalWorkPreference', formData.profWorkPreference || "");
+      formDataToSend.append('skillsTechnologies', formData.skillsTech || "");
 
-        // Form metadata
-        registrationStep: 'complete',
-        completedSteps: completedSteps,
-        submittedAt: new Date().toISOString(),
-        formVersion: "2.0"
-      };
+      console.log('Sending registration with FormData...');
+      
+      // Log FormData contents for debugging
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
-      console.log('Sending complete registration payload:', registrationPayload);
-      console.log('Total fields being sent:', Object.keys(registrationPayload).length);
-
-      // Real API call - replace with your actual endpoint
+      // Send request with FormData (browser will automatically set Content-Type to multipart/form-data)
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/auth/register`,
-        registrationPayload,
+        formDataToSend,
         {
           headers: {
-            'Content-Type': 'application/json',
+            // Don't set Content-Type manually - let browser set it with boundary
           }
         }
       );
 
       const { token, user } = response.data;
 
-      // Store authentication data
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // Store authentication data (only if localStorage is available in the environment)
+      try {
+        if (typeof Storage !== 'undefined') {
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      } catch (storageError) {
+        console.warn('localStorage not available, skipping token storage');
+      }
       
       setSuccess(true);
       toast.success("Registration successful! Welcome to Ekam Global Network!");
@@ -423,8 +405,6 @@ const Register = () => {
           />
         </div>
       </div>
-
-    
 
       {/* Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
